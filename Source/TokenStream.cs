@@ -17,6 +17,9 @@ namespace CSharp2Crayon
             return this;
         }
 
+        public int CurrentState { get { return this.index; } }
+        public void RestoreState(int value) { this.index = value; }
+
         public bool HasMore
         {
             get { return this.index < this.length; }
@@ -80,6 +83,15 @@ namespace CSharp2Crayon
         public Token PopWord()
         {
             if (this.index >= this.length) throw new ParserException("Unexpected EOF");
+            Token word = this.PopWordIfPresent();
+            if (word != null) return word;
+            Token t = this.tokens[this.index];
+            throw new ParserException(t, "Expected an alphanumeric word but found '" + t.Value + "'");
+        }
+
+        public Token PopWordIfPresent()
+        {
+            if (this.index >= this.length) return null;
             Token t = this.tokens[this.index++];
             char c = t.Value[0];
             if ((c >= 'a' && c <= 'z') ||
@@ -89,7 +101,7 @@ namespace CSharp2Crayon
             {
                 return t;
             }
-            throw new ParserException(t, "Expected an alphanumeric word but found '" + t.Value + "'");
+            return null;
         }
     }
 }

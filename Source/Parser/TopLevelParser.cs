@@ -17,14 +17,14 @@ namespace CSharp2Crayon.Parser
             string next = tokens.PeekValue() ?? "";
             switch (next)
             {
-                case "using": 
-                    EnsureModifiersEmpty(modifiers, firstToken); 
+                case "using":
+                    EnsureModifiersEmpty(modifiers, firstToken);
                     return ParseUsing(context, tokens);
                 case "namespace":
                     EnsureModifiersEmpty(modifiers, firstToken);
                     return ParseNamespace(context, tokens);
 
-                case "class": 
+                case "class":
                     return ParseClass(context, firstToken, modifiers, tokens);
 
                 default:
@@ -139,18 +139,79 @@ namespace CSharp2Crayon.Parser
             ClassDefinition cd = new ClassDefinition(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch);
             while (!tokens.PopIfPresent("}"))
             {
-                TopLevelEntity classMember = ParseClassMember(context, tokens);
+                TopLevelEntity classMember = ParseClassMember(cd, context, tokens);
                 cd.AddMember(classMember);
             }
             return cd;
         }
 
-        public static TopLevelEntity ParseClassMember(ParserContext context, TokenStream tokens)
+        public static TopLevelEntity ParseClassMember(ClassDefinition classDef, ParserContext context, TokenStream tokens)
         {
             Token firstToken = tokens.Peek();
             Dictionary<string, Token> modifiers = ParseModifiers(context, tokens);
 
+            CSharpType type = CSharpType.TryParse(tokens);
+
+            if (tokens.IsNext("(") && type.SimpleTypeName == classDef.Name.Value)
+            {
+                return ParseClassConstructor(classDef, firstToken, modifiers, type, tokens);
+            }
+
+            Token memberName = tokens.PopWord();
+
+            if (tokens.IsNext(";") || tokens.IsNext("="))
+            {
+                return ParseClassField(classDef, firstToken, modifiers, type, memberName);
+            }
+
+            if (tokens.IsNext("{"))
+            {
+                return ParseClassProperty(classDef, firstToken, modifiers, type, memberName);
+            }
+
+            if (tokens.IsNext("("))
+            {
+                return ParseClassMethod(classDef, firstToken, modifiers, type, memberName);
+            }
+
             throw new NotImplementedException();
+        }
+
+        private static TopLevelEntity ParseClassConstructor(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, TokenStream tokens)
+        {
+            List<CSharpType> argTypes = new List<CSharpType>();
+            List<Token> argNames = new List<Token>();
+            ParseArgList(argTypes, argNames, tokens);
+            throw new NotImplementedException();
+        }
+
+        private static TopLevelEntity ParseClassField(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token fieldName)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static TopLevelEntity ParseClassProperty(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token propertyName)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static TopLevelEntity ParseClassMethod(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token methodName)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void ParseArgList(List<CSharpType> typesOut, List<Token> namesOut, TokenStream tokens)
+        {
+            tokens.PopExpected("(");
+            if (tokens.PopIfPresent(")")) return;
+            typesOut.Add(CSharpType.Parse(tokens));
+            namesOut.Add(tokens.PopWord());
+            while (tokens.PopIfPresent(","))
+            {
+                typesOut.Add(CSharpType.Parse(tokens));
+                namesOut.Add(tokens.PopWord());
+            }
+            tokens.PopExpected(")");
         }
     }
 }
