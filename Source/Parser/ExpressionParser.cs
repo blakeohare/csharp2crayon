@@ -312,7 +312,7 @@ namespace CSharp2Crayon.Parser
                 (c >= 'A' && c <= 'Z') ||
                 c == '_')
             {
-                throw new NotImplementedException(); // this is a variable.
+                return new Variable(token);
             }
 
             throw new ParserException(token, "Unexpected token: '" + token.Value + "'");
