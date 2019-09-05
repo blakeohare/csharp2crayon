@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace CSharp2Crayon.Parser
 {
@@ -10,6 +10,40 @@ namespace CSharp2Crayon.Parser
         public Token[] RootType { get; private set; }
         public CSharpType[] Generics { get; private set; }
         public bool IsArray { get { return this.RootType[0].Value == "["; } }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            this.ToStringImpl(sb);
+            return sb.ToString();
+        }
+
+        private void ToStringImpl(StringBuilder sb)
+        {
+            if (this.IsArray)
+            {
+                this.Generics[0].ToStringImpl(sb);
+                sb.Append("[]");
+            }
+            else
+            {
+                for (int i = 0; i < this.RootType.Length; ++i)
+                {
+                    if (i > 0) sb.Append('.');
+                    sb.Append(this.RootType[i]);
+                }
+                if (this.Generics.Length > 0)
+                {
+                    sb.Append('<');
+                    for (int i = 0; i < this.Generics.Length; ++i)
+                    {
+                        if (i > 0) sb.Append(", ");
+                        this.Generics[i].ToStringImpl(sb);
+                    }
+                    sb.Append('>');
+                }
+            }
+        }
 
         public string SimpleTypeName
         {

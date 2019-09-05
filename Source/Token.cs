@@ -1,5 +1,4 @@
-﻿using System;
-namespace CSharp2Crayon
+﻿namespace CSharp2Crayon
 {
     public class Token
     {
@@ -7,6 +6,11 @@ namespace CSharp2Crayon
         public string Value { get; private set; }
         public int Column { get; private set; }
         public int Line { get; private set; }
+
+        public override string ToString()
+        {
+            return this.Value == null ? "(null)" : this.Value;
+        }
 
         public Token(string file, string value, int col, int line)
         {

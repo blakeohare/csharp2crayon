@@ -4,9 +4,4 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Folder Include="Parser\" />
-    <Folder Include="Parser\Nodes\" />
-  </ItemGroup>
 </Project>

@@ -171,7 +171,7 @@ namespace CSharp2Crayon.Parser
 
             if (tokens.IsNext("("))
             {
-                return ParseClassMethod(classDef, firstToken, modifiers, type, memberName, tokens);
+                return ParseClassMethod(classDef, context, firstToken, modifiers, type, memberName, tokens);
             }
 
             throw new NotImplementedException();
@@ -197,15 +197,20 @@ namespace CSharp2Crayon.Parser
 
         private static TopLevelEntity ParseClassMethod(
             ClassDefinition classDef,
+            ParserContext context,
             Token firstToken,
             Dictionary<string, Token> modifiers,
-            CSharpType type,
+            CSharpType returnType,
             Token methodName,
             TokenStream tokens)
         {
             List<CSharpType> argTypes = new List<CSharpType>();
             List<Token> argNames = new List<Token>();
             ParseArgList(argTypes, argNames, tokens);
+
+            MethodDefinition methodDef = new MethodDefinition(firstToken, modifiers, returnType, methodName);
+
+            methodDef.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
 
             throw new NotImplementedException();
         }

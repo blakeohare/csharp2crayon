@@ -1,5 +1,4 @@
 ﻿using CSharp2Crayon.Parser.Nodes;
-using System;
 using System.Collections.Generic;
 
 namespace CSharp2Crayon.Parser

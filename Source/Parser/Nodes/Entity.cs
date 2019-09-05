@@ -1,5 +1,4 @@
-﻿using System;
-namespace CSharp2Crayon.Parser.Nodes
+﻿namespace CSharp2Crayon.Parser.Nodes
 {
     public abstract class Entity
     {

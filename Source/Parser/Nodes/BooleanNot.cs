@@ -1,0 +1,12 @@
+﻿namespace CSharp2Crayon.Parser.Nodes
+{
+    public class BooleanNot : Expression
+    {
+        public Expression Root { get; private set; }
+
+        public BooleanNot(Token firstToken, Expression root) : base(firstToken)
+        {
+            this.Root = root;
+        }
+    }
+}

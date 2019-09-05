@@ -1,12 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace CSharp2Crayon
 {
     public static class Tokenizer
     {
+        private static HashSet<string> MULTICHAR_TOKENS = new HashSet<string>() {
+            "++",
+            "--",
+            "+=",
+            "-=",
+            "*=",
+            "/=",
+            "%=",
+            "|=",
+            "&=",
+            "^=",
+            "&&",
+            "||",
+            "??",
+            "==",
+            "!=",
+            "<<",
+            ">>",
+            "<=",
+            ">=",
+        };
+
         private enum Mode
         {
             NORMAL,
@@ -97,7 +117,22 @@ namespace CSharp2Crayon
                                 }
                                 else
                                 {
-                                    tokens.Add(new Token(filename, c.ToString(), cols[i], lines[i]));
+                                    string value = c.ToString();
+                                    bool isMultiChar = false;
+                                    if (i + 1 < length)
+                                    {
+                                        value += content[i + 1];
+                                        if (MULTICHAR_TOKENS.Contains(value))
+                                        {
+                                            tokens.Add(new Token(filename, value, cols[i], lines[i]));
+                                            ++i;
+                                            isMultiChar = true;
+                                        }
+                                    }
+                                    if (!isMultiChar)
+                                    {
+                                        tokens.Add(new Token(filename, c.ToString(), cols[i], lines[i]));
+                                    }
                                 }
                                 break;
                         }
