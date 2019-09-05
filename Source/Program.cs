@@ -24,8 +24,9 @@ namespace CSharp2Crayon
 
             foreach (string csharpFile in csharpFiles)
             {
-                TokenStream tokens = new TokenStream();
-                tokens.AddFile(csharpFile, Util.ReadFile(System.IO.Path.Combine(slnDir, csharpFile)));
+                TokenStream tokens = new TokenStream(
+                    csharpFile,
+                    Util.ReadFile(System.IO.Path.Combine(slnDir, csharpFile)));
 
                 while (tokens.HasMore)
                 {

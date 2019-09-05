@@ -7,6 +7,8 @@
         public int Column { get; private set; }
         public int Line { get; private set; }
 
+        internal int Size { get; set; }
+
         public override string ToString()
         {
             return this.Value == null ? "(null)" : this.Value;
@@ -18,6 +20,7 @@
             this.Value = value;
             this.Column = col;
             this.Line = line;
+            this.Size = 1;
         }
     }
 }

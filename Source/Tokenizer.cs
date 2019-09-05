@@ -22,7 +22,7 @@ namespace CSharp2Crayon
             "==",
             "!=",
             "<<",
-            ">>",
+            // ">>", This is INTENTIONALLY omitted. The token stream will consolidate '>>' into a single token conditionally depending on whether or not a type is being parsed.
             "<=",
             ">=",
         };

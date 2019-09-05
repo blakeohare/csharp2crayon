@@ -78,6 +78,14 @@ namespace CSharp2Crayon.Parser
 
         public static CSharpType TryParse(TokenStream tokens)
         {
+            tokens.SetTypeParsingMode(true);
+            CSharpType type = TryParseImpl(tokens);
+            tokens.SetTypeParsingMode(false);
+            return type;
+        }
+
+        private static CSharpType TryParseImpl(TokenStream tokens)
+        {
             int tokenState = tokens.CurrentState;
             IList<Token> rootType = GetRootType(tokens);
             if (rootType == null)
@@ -93,7 +101,7 @@ namespace CSharp2Crayon.Parser
                 {
                     bool isValid = true;
                     List<CSharpType> generics = new List<CSharpType>();
-                    CSharpType first = TryParse(tokens);
+                    CSharpType first = TryParseImpl(tokens);
                     if (first != null)
                     {
                         while (isValid && !tokens.IsNext(">"))
@@ -104,7 +112,7 @@ namespace CSharp2Crayon.Parser
                             }
                             else
                             {
-                                CSharpType next = TryParse(tokens);
+                                CSharpType next = TryParseImpl(tokens);
                                 if (next == null)
                                 {
                                     isValid = false;
