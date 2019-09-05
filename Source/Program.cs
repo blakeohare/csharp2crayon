@@ -10,26 +10,29 @@ namespace CSharp2Crayon
         {
             if (args.Length == 0)
             {
-                args = new string[] { "/Users/blakeohare/Crayon/Compiler/CrayonWindows.sln" };
+                args = new string[] {
+                    Environment.OSVersion.Platform == PlatformID.Unix
+                        ? "/Users/blakeohare/Crayon/Compiler/CrayonWindows.sln"
+                        : @"C:\Things\Crayon\Compiler\CrayonWindows.sln"
+                };
             }
             string slnPath = args[0];
             string slnData = Util.ReadFile(slnPath);
             string slnDir = System.IO.Path.GetDirectoryName(slnPath);
             string[] csharpFiles = Util.GatherFiles(slnDir, ".cs");
-            TokenStream tokens = new TokenStream();
+            ParserContext parser = new ParserContext();
+
             foreach (string csharpFile in csharpFiles)
             {
+                TokenStream tokens = new TokenStream();
                 tokens.AddFile(csharpFile, Util.ReadFile(System.IO.Path.Combine(slnDir, csharpFile)));
-            }
 
-            ParserContext parser = new ParserContext();
-            while (tokens.HasMore)
-            {
-                TopLevelEntity tle = TopLevelParser.Parse(parser, tokens);
-                parser.AddEntity(tle);
+                while (tokens.HasMore)
+                {
+                    TopLevelEntity tle = TopLevelParser.Parse(parser, tokens);
+                    parser.AddEntity(tle);
+                }
             }
-
         }
-
     }
 }

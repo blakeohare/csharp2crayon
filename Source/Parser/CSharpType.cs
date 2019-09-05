@@ -9,6 +9,8 @@ namespace CSharp2Crayon.Parser
         public Token FirstToken { get; private set; }
         public Token[] RootType { get; private set; }
         public CSharpType[] Generics { get; private set; }
+        public bool IsArray { get { return this.RootType[0].Value == "["; } }
+
         public string SimpleTypeName
         {
             get
@@ -26,8 +28,8 @@ namespace CSharp2Crayon.Parser
             this.Generics = generics.ToArray();
         }
 
-        private static HashSet<string> PRIMITIVES_LOOKUP = new HashSet<string>() { 
-            "int", "double", "float", "string", "object", 
+        private static HashSet<string> PRIMITIVES_LOOKUP = new HashSet<string>() {
+            "int", "double", "float", "string", "object",
             "byte", "char", "bool", "long",
         };
 
@@ -80,14 +82,37 @@ namespace CSharp2Crayon.Parser
 
                         if (isValid && tokens.PopIfPresent(">"))
                         {
-                            return new CSharpType(rootType, generics);
+                            CSharpType o = new CSharpType(rootType, generics);
+                            if (tokens.IsNext("["))
+                            {
+                                o = ParseOutArraySuffix(o, tokens);
+                            }
+                            return o;
                         }
                     }
                 }
                 tokens.RestoreState(preGenerics);
             }
 
-            return new CSharpType(rootType, EMPTY_GENERICS);
+            CSharpType output = new CSharpType(rootType, EMPTY_GENERICS);
+            if (tokens.IsNext("["))
+            {
+                output = ParseOutArraySuffix(output, tokens);
+            }
+            return output;
+        }
+
+        private static CSharpType ParseOutArraySuffix(CSharpType current, TokenStream tokens)
+        {
+            while (tokens.AreNext("[", "]"))
+            {
+                Token openBracket = tokens.Pop();
+                tokens.Pop();
+                Token firstToken = current.FirstToken;
+                current = new CSharpType(new Token[] { openBracket }, new CSharpType[] { current });
+                current.FirstToken = firstToken;
+            }
+            return current;
         }
 
         private static IList<Token> GetRootType(TokenStream tokens)

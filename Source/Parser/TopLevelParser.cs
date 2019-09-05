@@ -161,17 +161,17 @@ namespace CSharp2Crayon.Parser
 
             if (tokens.IsNext(";") || tokens.IsNext("="))
             {
-                return ParseClassField(classDef, firstToken, modifiers, type, memberName);
+                return ParseClassField(classDef, firstToken, modifiers, type, memberName, tokens);
             }
 
             if (tokens.IsNext("{"))
             {
-                return ParseClassProperty(classDef, firstToken, modifiers, type, memberName);
+                return ParseClassProperty(classDef, firstToken, modifiers, type, memberName, tokens);
             }
 
             if (tokens.IsNext("("))
             {
-                return ParseClassMethod(classDef, firstToken, modifiers, type, memberName);
+                return ParseClassMethod(classDef, firstToken, modifiers, type, memberName, tokens);
             }
 
             throw new NotImplementedException();
@@ -185,18 +185,28 @@ namespace CSharp2Crayon.Parser
             throw new NotImplementedException();
         }
 
-        private static TopLevelEntity ParseClassField(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token fieldName)
+        private static TopLevelEntity ParseClassField(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token fieldName, TokenStream tokens)
         {
             throw new NotImplementedException();
         }
 
-        private static TopLevelEntity ParseClassProperty(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token propertyName)
+        private static TopLevelEntity ParseClassProperty(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token propertyName, TokenStream tokens)
         {
             throw new NotImplementedException();
         }
 
-        private static TopLevelEntity ParseClassMethod(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token methodName)
+        private static TopLevelEntity ParseClassMethod(
+            ClassDefinition classDef,
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            CSharpType type,
+            Token methodName,
+            TokenStream tokens)
         {
+            List<CSharpType> argTypes = new List<CSharpType>();
+            List<Token> argNames = new List<Token>();
+            ParseArgList(argTypes, argNames, tokens);
+
             throw new NotImplementedException();
         }
 

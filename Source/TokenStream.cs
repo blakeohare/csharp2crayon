@@ -80,6 +80,22 @@ namespace CSharp2Crayon
             return this.index < this.length && this.tokens[this.index].Value == value;
         }
 
+        public bool AreNext(params string[] values)
+        {
+            if (this.index + values.Length <= this.length)
+            {
+                for (int i = 0; i < values.Length; ++i)
+                {
+                    if (this.tokens[this.index + i].Value != values[i])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
         public Token PopWord()
         {
             if (this.index >= this.length) throw new ParserException("Unexpected EOF");
