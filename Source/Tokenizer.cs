@@ -118,21 +118,30 @@ namespace CSharp2Crayon
                                 else
                                 {
                                     string value = c.ToString();
-                                    bool isMultiChar = false;
                                     if (i + 1 < length)
                                     {
-                                        value += content[i + 1];
+                                        c2 = content[i + 1];
+                                        value += c2;
                                         if (MULTICHAR_TOKENS.Contains(value))
                                         {
                                             tokens.Add(new Token(filename, value, cols[i], lines[i]));
                                             ++i;
-                                            isMultiChar = true;
+                                            break;
+                                        }
+
+                                        // floats that begin with a decimal
+                                        if (c == '.' && c2 >= '0' && c2 <= '9')
+                                        {
+                                            // go ahead and advance past the decimal and treat it as a normal token.
+                                            tokenStart = i;
+                                            i++;
+                                            mode = Mode.TOKEN;
+                                            tokenBuilder = new StringBuilder();
+                                            tokenBuilder.Append(value);
+                                            break;
                                         }
                                     }
-                                    if (!isMultiChar)
-                                    {
-                                        tokens.Add(new Token(filename, c.ToString(), cols[i], lines[i]));
-                                    }
+                                    tokens.Add(new Token(filename, c.ToString(), cols[i], lines[i]));
                                 }
                                 break;
                         }
@@ -177,6 +186,11 @@ namespace CSharp2Crayon
                             c == '_')
                         {
                             tokenBuilder.Append(c);
+                        }
+                        else if (c == '.' && (content[i - 1] >= '0' && content[i - 1] <= '9'))
+                        {
+                            // float. Treat it as a continuous token.
+                            tokenBuilder.Append('.');
                         }
                         else
                         {
