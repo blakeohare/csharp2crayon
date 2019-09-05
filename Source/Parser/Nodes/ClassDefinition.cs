@@ -14,11 +14,11 @@ namespace CSharp2Crayon.Parser.Nodes
         private List<TopLevelEntity> membersBuilder = new List<TopLevelEntity>();
 
         public ClassDefinition(
-            Token firstToken, 
-            Dictionary<string, Token> modifiers, 
-            Token classToken, 
-            Token classNameToken, 
-            List<Token[]> subClassesAndSuch) 
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            Token classToken,
+            Token classNameToken,
+            List<Token[]> subClassesAndSuch)
             : base(firstToken)
         {
             this.ClassToken = classToken;
