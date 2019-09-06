@@ -101,6 +101,12 @@ namespace CSharp2Crayon.Parser
                 List<Expression> expressions = new List<Expression>() { root, ParseBitShift(context, tokens) };
                 return new OpChain(expressions, ops);
             }
+            if (tokens.IsNext("is"))
+            {
+                Token isToken = tokens.Pop();
+                CSharpType type = CSharpType.Parse(tokens);
+                return new IsComparison(root.FirstToken, root, isToken, type);
+            }
             return root;
         }
 
@@ -555,10 +561,24 @@ namespace CSharp2Crayon.Parser
             {
                 if (next.Contains('.'))
                 {
-                    throw new NotImplementedException(); // parse float
+                    if (next.EndsWith("f") || next.EndsWith("F"))
+                    {
+                        throw new NotImplementedException();
+                    }
+                    double floatValue;
+                    if (!double.TryParse(next, out floatValue))
+                    {
+                        throw new ParserException(token, "Invalid number: '" + next + "'");
+                    }
+                    return new DoubleConstant(token, floatValue);
                 }
                 else
                 {
+                    if (next.EndsWith("f") || next.EndsWith("F"))
+                    {
+                        throw new NotImplementedException();
+                    }
+
                     int intValue;
                     if (!int.TryParse(next, out intValue))
                     {

@@ -243,7 +243,8 @@ namespace CSharp2Crayon.Parser
         {
             List<CSharpType> argTypes = new List<CSharpType>();
             List<Token> argNames = new List<Token>();
-            ParseArgList(argTypes, argNames, tokens);
+            List<Token> argModifiers = new List<Token>();
+            ParseArgList(argTypes, argNames, argModifiers, tokens);
 
             Token baseConstructorInvocation = null;
             List<Expression> baseConstructorArgs = null;
@@ -266,7 +267,14 @@ namespace CSharp2Crayon.Parser
                 }
             }
 
-            ConstructorDefinition constructorDef = new ConstructorDefinition(firstToken, modifiers, argTypes, argNames, baseConstructorInvocation, baseConstructorArgs);
+            ConstructorDefinition constructorDef = new ConstructorDefinition(
+                firstToken,
+                modifiers,
+                argTypes,
+                argNames,
+                argModifiers,
+                baseConstructorInvocation,
+                baseConstructorArgs);
             constructorDef.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
 
             return constructorDef;
@@ -346,23 +354,38 @@ namespace CSharp2Crayon.Parser
         {
             List<CSharpType> argTypes = new List<CSharpType>();
             List<Token> argNames = new List<Token>();
-            ParseArgList(argTypes, argNames, tokens);
+            List<Token> argModifiers = new List<Token>();
+            ParseArgList(argTypes, argNames, argModifiers, tokens);
 
-            MethodDefinition methodDef = new MethodDefinition(firstToken, modifiers, returnType, methodName);
+            MethodDefinition methodDef = new MethodDefinition(
+                firstToken,
+                modifiers,
+                returnType,
+                methodName,
+                argNames,
+                argTypes,
+                argModifiers);
 
             methodDef.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
 
             return methodDef;
         }
 
-        private static void ParseArgList(List<CSharpType> typesOut, List<Token> namesOut, TokenStream tokens)
+        private static void ParseArgList(List<CSharpType> typesOut, List<Token> namesOut, List<Token> modifiers, TokenStream tokens)
         {
             tokens.PopExpected("(");
-            if (tokens.PopIfPresent(")")) return;
-            typesOut.Add(CSharpType.Parse(tokens));
-            namesOut.Add(tokens.PopWord());
-            while (tokens.PopIfPresent(","))
+
+            while (!tokens.IsNext(")"))
             {
+                if (namesOut.Count > 0) tokens.PopExpected(",");
+                if (tokens.IsNext("params"))
+                {
+                    modifiers.Add(tokens.Pop());
+                }
+                else
+                {
+                    modifiers.Add(null);
+                }
                 typesOut.Add(CSharpType.Parse(tokens));
                 namesOut.Add(tokens.PopWord());
             }

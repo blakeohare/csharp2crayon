@@ -308,9 +308,15 @@ namespace CSharp2Crayon.Parser
         {
             Token usingToken = tokens.PopExpected("using");
             tokens.PopExpected("(");
-            CSharpType type = CSharpType.Parse(tokens);
-            Token variable = tokens.PopWord();
-            Token equalsToken = tokens.PopExpected("=");
+            CSharpType type = null;
+            Token variable = null;
+            Token equalsToken = null;
+            if (!tokens.IsNext("new"))
+            {
+                type = CSharpType.Parse(tokens);
+                variable = tokens.PopWord();
+                equalsToken = tokens.PopExpected("=");
+            }
             Expression expression = ExpressionParser.Parse(context, tokens);
             tokens.PopExpected(")");
             Executable[] code = ExecutableParser.ParseCodeBlock(context, tokens, false);

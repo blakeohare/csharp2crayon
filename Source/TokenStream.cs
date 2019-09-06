@@ -139,6 +139,7 @@ namespace CSharp2Crayon
             {
                 throw new ParserException(token, "Expected '" + value + "' but found '" + token.Value + "'");
             }
+
             return token;
         }
 

@@ -7,6 +7,8 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         public CSharpType[] ArgTypes { get; private set; }
         public Token[] ArgNames { get; private set; }
+        public Token[] ArgModifiers { get; private set; }
+
         public Token BaseConstructorInvocation { get; private set; }
         public Expression[] BaseConstructorArgs { get; private set; }
         public Executable[] Code { get; internal set; }
@@ -16,6 +18,7 @@ namespace CSharp2Crayon.Parser.Nodes
             Dictionary<string, Token> modifiers,
             IList<CSharpType> argTypes,
             IList<Token> argNames,
+            IList<Token> argModifiers,
             Token nullableBaseConstructorInvocation,
             IList<Expression> nullableBaseConstructorArguments)
             : base(firstToken)
@@ -23,6 +26,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ApplyModifiers(modifiers);
             this.ArgTypes = argTypes.ToArray();
             this.ArgNames = argNames.ToArray();
+            this.ArgModifiers = argModifiers.ToArray();
             this.BaseConstructorInvocation = nullableBaseConstructorInvocation;
             this.BaseConstructorArgs = nullableBaseConstructorArguments == null ? null : nullableBaseConstructorArguments.ToArray();
         }
