@@ -236,16 +236,21 @@ namespace CSharp2Crayon.Parser
                     case "(":
                         Token openParen = tokens.Pop();
                         List<Expression> args = new List<Expression>();
-                        if (!tokens.PopIfPresent(")"))
+                        List<Token> outTokens = new List<Token>();
+                        while (!tokens.PopIfPresent(")"))
                         {
-                            args.Add(Parse(context, tokens));
-                            while (tokens.PopIfPresent(","))
+                            if (args.Count > 0) tokens.PopExpected(",");
+                            if (tokens.IsNext("out"))
                             {
-                                args.Add(Parse(context, tokens));
+                                outTokens.Add(tokens.Pop());
                             }
-                            tokens.PopExpected(")");
+                            else
+                            {
+                                outTokens.Add(null);
+                            }
+                            args.Add(Parse(context, tokens));
                         }
-                        root = new FunctionInvocation(root.FirstToken, root, openParen, args);
+                        root = new FunctionInvocation(root.FirstToken, root, openParen, args, outTokens);
                         break;
                     default:
                         anythingInteresting = false;
