@@ -154,19 +154,19 @@ namespace CSharp2Crayon.Parser
 
             if (tokens.IsNext("(") && type.SimpleTypeName == classDef.Name.Value)
             {
-                return ParseClassConstructor(classDef, firstToken, modifiers, type, tokens);
+                return ParseClassConstructor(classDef, context, firstToken, modifiers, type, tokens);
             }
 
             Token memberName = tokens.PopWord();
 
             if (tokens.IsNext(";") || tokens.IsNext("="))
             {
-                return ParseClassField(classDef, firstToken, modifiers, type, memberName, tokens);
+                return ParseClassField(classDef, context, firstToken, modifiers, type, memberName, tokens);
             }
 
             if (tokens.IsNext("{"))
             {
-                return ParseClassProperty(classDef, firstToken, modifiers, type, memberName, tokens);
+                return ParseClassProperty(classDef, context, firstToken, modifiers, type, memberName, tokens);
             }
 
             if (tokens.IsNext("("))
@@ -177,22 +177,106 @@ namespace CSharp2Crayon.Parser
             throw new NotImplementedException();
         }
 
-        private static TopLevelEntity ParseClassConstructor(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, TokenStream tokens)
+        private static TopLevelEntity ParseClassConstructor(
+            ClassDefinition classDef,
+            ParserContext context,
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            CSharpType type,
+            TokenStream tokens)
         {
             List<CSharpType> argTypes = new List<CSharpType>();
             List<Token> argNames = new List<Token>();
             ParseArgList(argTypes, argNames, tokens);
-            throw new NotImplementedException();
+
+            Token baseConstructorInvocation = null;
+            List<Expression> baseConstructorArgs = null;
+            if (tokens.PopIfPresent(":"))
+            {
+                if (tokens.IsNext("base") || tokens.IsNext("this"))
+                {
+                    baseConstructorInvocation = tokens.Pop();
+                }
+                else
+                {
+                    tokens.PopExpected("base"); // intentionally throw
+                }
+                tokens.PopExpected("(");
+                baseConstructorArgs = new List<Expression>();
+                while (!tokens.PopIfPresent(")"))
+                {
+                    if (baseConstructorArgs.Count > 0) tokens.PopExpected(",");
+                    baseConstructorArgs.Add(ExpressionParser.Parse(context, tokens));
+                }
+            }
+
+            ConstructorDefinition constructorDef = new ConstructorDefinition(firstToken, modifiers, argTypes, argNames, baseConstructorInvocation, baseConstructorArgs);
+            constructorDef.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
+
+            return constructorDef;
         }
 
-        private static TopLevelEntity ParseClassField(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token fieldName, TokenStream tokens)
+        private static TopLevelEntity ParseClassField(
+            ClassDefinition classDef,
+            ParserContext context,
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            CSharpType type,
+            Token fieldName,
+            TokenStream tokens)
         {
-            throw new NotImplementedException();
+            Expression initialValue = null;
+            if (!tokens.PopIfPresent(";"))
+            {
+                tokens.PopExpected("=");
+                initialValue = ExpressionParser.Parse(context, tokens);
+                tokens.PopExpected(";");
+            }
+            return new FieldDefinition(firstToken, modifiers, type, fieldName, initialValue);
         }
 
-        private static TopLevelEntity ParseClassProperty(ClassDefinition classDef, Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token propertyName, TokenStream tokens)
+        private static TopLevelEntity ParseClassProperty(
+            ClassDefinition classDef,
+            ParserContext context,
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            CSharpType type,
+            Token propertyName,
+            TokenStream tokens)
         {
-            throw new NotImplementedException();
+            tokens.PopExpected("{");
+
+            PropertyBody getter = null;
+            PropertyBody setter = null;
+
+            while (!tokens.IsNext("}") && (getter == null || setter == null))
+            {
+                Token bodyFirstToken = tokens.Peek();
+                Dictionary<string, Token> bodyModifiers = ParseModifiers(context, tokens);
+                if (tokens.IsNext("get") && getter == null)
+                {
+                    Token getToken = tokens.Pop();
+                    getter = new PropertyBody(bodyFirstToken, bodyModifiers, true);
+                    if (!tokens.PopIfPresent(";")) getter.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
+                }
+                else if (tokens.IsNext("set") && setter == null)
+                {
+                    Token setToken = tokens.Pop();
+                    setter = new PropertyBody(bodyFirstToken, bodyModifiers, false);
+                    if (!tokens.PopIfPresent(";")) setter.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
+                }
+                else if (getter == null)
+                {
+                    tokens.PopExpected("get"); // intentionally throw
+                }
+                else
+                {
+                    tokens.PopExpected("set"); // intentionally throw
+                }
+            }
+            tokens.PopExpected("}");
+
+            return new PropertyDefinition(firstToken, modifiers, type, propertyName, getter, setter);
         }
 
         private static TopLevelEntity ParseClassMethod(
@@ -212,7 +296,7 @@ namespace CSharp2Crayon.Parser
 
             methodDef.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
 
-            throw new NotImplementedException();
+            return methodDef;
         }
 
         private static void ParseArgList(List<CSharpType> typesOut, List<Token> namesOut, TokenStream tokens)

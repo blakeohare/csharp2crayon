@@ -185,8 +185,31 @@ namespace CSharp2Crayon.Parser
             Expression root;
             if (tokens.IsNext("("))
             {
-                tokens.Pop();
+                Token openParen = tokens.Pop();
                 root = Parse(context, tokens);
+                if (root is Variable && tokens.IsNext(","))
+                {
+                    List<Token> lambdaArgs = new List<Token>() { root.FirstToken };
+                    // this could be an argument list
+                    while (tokens.PopIfPresent(","))
+                    {
+                        lambdaArgs.Add(tokens.PopWord());
+                    }
+                    Token arrowToken = tokens.PopExpected("=>");
+                    Executable[] lambdaBody;
+                    if (tokens.IsNext("{"))
+                    {
+                        lambdaBody = ExecutableParser.ParseCodeBlock(context, tokens, true);
+                    }
+                    else
+                    {
+                        Expression expr = Parse(context, tokens);
+                        lambdaBody = new Executable[] {
+                            new ReturnStatement(expr.FirstToken, expr)
+                        };
+                    }
+                    return new Lambda(openParen, lambdaArgs, arrowToken, lambdaBody);
+                }
                 tokens.PopExpected(")");
             }
             else
@@ -304,7 +327,13 @@ namespace CSharp2Crayon.Parser
                 }
                 else
                 {
-                    throw new NotImplementedException(); // parse decimal integer
+                    int intValue;
+                    if (!int.TryParse(next, out intValue))
+                    {
+                        throw new ParserException(token, "Invalid number: '" + next + "'");
+                    }
+
+                    return new IntegerConstant(token, intValue);
                 }
             }
 
@@ -312,6 +341,24 @@ namespace CSharp2Crayon.Parser
                 (c >= 'A' && c <= 'Z') ||
                 c == '_')
             {
+                if (tokens.IsNext("=>"))
+                {
+                    List<Token> args = new List<Token>() { token };
+                    Token arrowToken = tokens.Pop();
+                    Executable[] lambdaBody;
+                    if (tokens.IsNext("{"))
+                    {
+                        lambdaBody = ExecutableParser.ParseCodeBlock(context, tokens, true);
+                    }
+                    else
+                    {
+                        Expression lambdaBodyExpr = Parse(context, tokens);
+                        lambdaBody = new Executable[] {
+                            new ReturnStatement(lambdaBodyExpr.FirstToken, lambdaBodyExpr),
+                        };
+                    }
+                    return new Lambda(token, args, arrowToken, lambdaBody);
+                }
                 return new Variable(token);
             }
 
