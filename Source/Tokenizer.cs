@@ -231,7 +231,11 @@ namespace CSharp2Crayon
                 string line = lines[i];
                 if (line.Length > 0 && line[0] == '#')
                 {
-                    if (line.StartsWith("#if ") || line.StartsWith("#elif "))
+                    if (line.StartsWith("#pragma warning"))
+                    {
+                        line = "";
+                    }
+                    else if (line.StartsWith("#if ") || line.StartsWith("#elif "))
                     {
                         bool isElif = line.StartsWith("#elif");
                         bool isIf = !isElif;
