@@ -44,6 +44,7 @@ namespace CSharp2Crayon.Parser
                 case "switch": throw new NotImplementedException();
                 case "throw": return ParseThrowStatement(context, tokens);
                 case "return": return ParseReturnStatement(context, tokens);
+                case "using": return ParseUsingStatement(context, tokens);
                 default:
                     break;
             }
@@ -191,6 +192,19 @@ namespace CSharp2Crayon.Parser
             Expression expr = ExpressionParser.Parse(context, tokens);
             tokens.PopExpected(";");
             return new ThrowStatement(throwToken, expr);
+        }
+
+        private static Executable ParseUsingStatement(ParserContext context, TokenStream tokens)
+        {
+            Token usingToken = tokens.PopExpected("using");
+            tokens.PopExpected("(");
+            CSharpType type = CSharpType.Parse(tokens);
+            Token variable = tokens.PopWord();
+            Token equalsToken = tokens.PopExpected("=");
+            Expression expression = ExpressionParser.Parse(context, tokens);
+            tokens.PopExpected(")");
+            Executable[] code = ExecutableParser.ParseCodeBlock(context, tokens, false);
+            return new UsingStatement(usingToken, type, variable, expression, code);
         }
     }
 }
