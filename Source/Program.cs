@@ -28,6 +28,9 @@ namespace CSharp2Crayon
             };
             foreach (string csharpFile in csharpFiles)
             {
+                // blarg
+                if (csharpFile.Replace('\\', '/').EndsWith("Properties/AssemblyInfo.cs")) continue;
+
                 TokenStream tokens = new TokenStream(
                     csharpFile,
                     Util.ReadFile(System.IO.Path.Combine(slnDir, csharpFile)),

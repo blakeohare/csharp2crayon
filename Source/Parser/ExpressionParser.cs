@@ -278,6 +278,27 @@ namespace CSharp2Crayon.Parser
             return ParenthesisSituation.WRAPPED_EXPRESSION;
         }
 
+        private enum ConstructorSuffixData
+        {
+            SEQUENTIAL_ITEMS,
+            KVP_ENTRIES,
+            PROPERTIES,
+        }
+
+        // called after the { is popped
+        private static ConstructorSuffixData DetermineConstructorSuffixDataFormat(TokenStream tokens)
+        {
+            if (!tokens.HasMore) return ConstructorSuffixData.SEQUENTIAL_ITEMS;
+            if (tokens.IsNext("{")) return ConstructorSuffixData.KVP_ENTRIES;
+            int state = tokens.CurrentState;
+            Token nextToken = tokens.Pop();
+            Token skipToken = tokens.Peek();
+            tokens.RestoreState(state);
+            if (skipToken == null) return ConstructorSuffixData.SEQUENTIAL_ITEMS;
+            if (nextToken.IsIdentifier && skipToken.Value == "=") return ConstructorSuffixData.PROPERTIES;
+            return ConstructorSuffixData.SEQUENTIAL_ITEMS;
+        }
+
         private static Expression ParseAtomWithSuffix(ParserContext context, TokenStream tokens)
         {
             Expression root;
@@ -387,16 +408,42 @@ namespace CSharp2Crayon.Parser
                         ConstructorInvocationFragment cif = fi == null ? null : (ConstructorInvocationFragment)fi.Root;
                         if (root is FunctionInvocation && ((FunctionInvocation)root).Root is ConstructorInvocationFragment)
                         {
-                            tokens.Pop();
+                            tokens.Pop(); // {
+
+                            ConstructorSuffixData format = DetermineConstructorSuffixDataFormat(tokens);
+
                             bool nextAllowed = true;
-                            List<Expression> constructorItems = new List<Expression>();
+                            List<Expression> values = new List<Expression>();
+                            List<Expression> kvpKeys = new List<Expression>();
+                            List<Token> propertyNames = new List<Token>();
                             while (!tokens.PopIfPresent("}"))
                             {
                                 if (!nextAllowed) tokens.PopExpected("}"); // intentionally throw
-                                constructorItems.Add(Parse(context, tokens));
+                                switch (format) {
+                                    case ConstructorSuffixData.KVP_ENTRIES:
+                                        tokens.PopExpected("{");
+                                        kvpKeys.Add(Parse(context, tokens));
+                                        tokens.PopExpected(",");
+                                        values.Add(Parse(context, tokens));
+                                        tokens.PopExpected("}");
+                                        break;
+
+                                    case ConstructorSuffixData.PROPERTIES:
+                                        propertyNames.Add(tokens.PopWord());
+                                        tokens.PopExpected("=");
+                                        values.Add(Parse(context, tokens));
+                                        break;
+
+                                    case ConstructorSuffixData.SEQUENTIAL_ITEMS:
+                                        values.Add(Parse(context, tokens));
+                                        break;
+                                }
                                 nextAllowed = tokens.PopIfPresent(",");
                             }
-                            cif.InitialDataSuffix = constructorItems.ToArray();
+                            cif.InitialDataValues = values.ToArray();
+                            int t = cif.InitialDataValues.Length;
+                            if (kvpKeys.Count == t) cif.InitialDataKeys = kvpKeys.ToArray();
+                            if (propertyNames.Count == t) cif.InitialDataPropertyNames = propertyNames.ToArray();
                         }
                         else
                         {

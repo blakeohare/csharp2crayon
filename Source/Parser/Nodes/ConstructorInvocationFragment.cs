@@ -4,7 +4,10 @@
     public class ConstructorInvocationFragment : Expression
     {
         public CSharpType ClassName { get; private set; }
-        public Expression[] InitialDataSuffix { get; internal set; }
+
+        public Token[] InitialDataPropertyNames { get; internal set; }
+        public Expression[] InitialDataKeys { get; internal set; }
+        public Expression[] InitialDataValues { get; internal set; }
 
         public ConstructorInvocationFragment(Token newKeywordToken, CSharpType classNameAsAType)
             : base(newKeywordToken)

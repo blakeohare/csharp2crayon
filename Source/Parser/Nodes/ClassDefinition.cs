@@ -5,10 +5,8 @@ namespace CSharp2Crayon.Parser.Nodes
     public class ClassDefinition : TopLevelEntity
     {
         public Token ClassToken { get; private set; }
-        public bool IsStatic { get; private set; }
-        public bool IsAbstract { get; private set; }
         public Token Name { get; private set; }
-        public Token[][] RawSubClassInfoTokens { get; private set; }
+        public CSharpType[] RawSubClassInfoTokens { get; private set; }
 
         private List<TopLevelEntity> membersBuilder = new List<TopLevelEntity>();
 
@@ -17,13 +15,12 @@ namespace CSharp2Crayon.Parser.Nodes
             Dictionary<string, Token> modifiers,
             Token classToken,
             Token classNameToken,
-            List<Token[]> subClassesAndSuch)
+            List<CSharpType> subClassesAndSuch)
             : base(firstToken)
         {
             this.ClassToken = classToken;
             this.Name = classNameToken;
-            this.IsStatic = modifiers.ContainsKey("static");
-            this.IsAbstract = modifiers.ContainsKey("abstract");
+            this.ApplyModifiers(modifiers);
             this.RawSubClassInfoTokens = subClassesAndSuch.ToArray();
         }
 

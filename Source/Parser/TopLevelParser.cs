@@ -27,6 +27,9 @@ namespace CSharp2Crayon.Parser
                 case "class":
                     return ParseClass(context, firstToken, modifiers, tokens);
 
+                case "enum":
+                    return ParseEnumDefinition(context, firstToken, modifiers, tokens);
+
                 default:
                     throw new ParserException(tokens.Peek(), "Unexpected token: '" + next + "'");
             }
@@ -115,7 +118,7 @@ namespace CSharp2Crayon.Parser
         {
             Token classToken = tokens.PopExpected("class");
             Token classNameToken = tokens.PopWord();
-            List<Token[]> subClassesAndSuch = new List<Token[]>();
+            List<CSharpType> subClassesAndSuch = new List<CSharpType>();
             if (tokens.PopIfPresent(":"))
             {
                 while (!tokens.IsNext("{"))
@@ -124,15 +127,8 @@ namespace CSharp2Crayon.Parser
                     {
                         tokens.PopExpected(",");
                     }
-                    List<Token> classNameBuilder = new List<Token>();
-                    classNameBuilder.Add(tokens.PopWord());
-                    while (tokens.PopIfPresent("."))
-                    {
-                        classNameBuilder.Add(tokens.PopWord());
-                    }
-                    subClassesAndSuch.Add(classNameBuilder.ToArray());
+                    subClassesAndSuch.Add(CSharpType.Parse(tokens));
                 }
-
             }
 
             tokens.PopExpected("{");
@@ -149,6 +145,21 @@ namespace CSharp2Crayon.Parser
         {
             Token firstToken = tokens.Peek();
             Dictionary<string, Token> modifiers = ParseModifiers(context, tokens);
+
+            if (tokens.IsNext("enum"))
+            {
+                return ParseEnumDefinition(context, firstToken, modifiers, tokens);
+            }
+
+            if (tokens.IsNext("class"))
+            {
+                return ParseClass(context, firstToken, modifiers, tokens);
+            }
+
+            if (tokens.IsNext("const"))
+            {
+                return ParseConstDefinition(context, firstToken, modifiers, tokens);
+            }
 
             CSharpType type = CSharpType.TryParse(tokens);
 
@@ -175,6 +186,51 @@ namespace CSharp2Crayon.Parser
             }
 
             throw new NotImplementedException();
+        }
+
+        private static TopLevelEntity ParseEnumDefinition(
+            ParserContext context,
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            TokenStream tokens)
+        {
+            Token enumToken = tokens.PopExpected("enum");
+            Token enumName = tokens.PopWord();
+            List<Token> fieldNames = new List<Token>();
+            List<Expression> fieldValues = new List<Expression>();
+            tokens.PopExpected("{");
+            bool nextAllowed = true;
+            while (!tokens.PopIfPresent("}"))
+            {
+                if (!nextAllowed) tokens.PopExpected("}"); // intentionally throw
+                Token enumFieldName = tokens.PopWord();
+                Expression enumFieldValue = null;
+                if (tokens.PopIfPresent("="))
+                {
+                    enumFieldValue = ExpressionParser.Parse(context, tokens);
+                }
+                fieldNames.Add(enumFieldName);
+                fieldValues.Add(enumFieldValue);
+
+                nextAllowed = tokens.PopIfPresent(",");
+            }
+            return new EnumDefinition(firstToken, modifiers, enumName, fieldNames, fieldValues);
+        }
+
+        private static TopLevelEntity ParseConstDefinition(
+            ParserContext context,
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            TokenStream tokens)
+        {
+            Token constToken = tokens.PopExpected("const");
+            CSharpType constType = CSharpType.Parse(tokens);
+            Token name = tokens.PopWord();
+            tokens.PopExpected("=");
+            Expression value = ExpressionParser.Parse(context, tokens);
+            tokens.PopExpected(";");
+
+            return new ConstDefinition(firstToken, modifiers, constType, name, value);
         }
 
         private static TopLevelEntity ParseClassConstructor(
