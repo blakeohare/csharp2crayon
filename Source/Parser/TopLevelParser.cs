@@ -372,7 +372,14 @@ namespace CSharp2Crayon.Parser
                 argTypes,
                 argModifiers);
 
-            methodDef.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
+            if (methodDef.IsAbstract)
+            {
+                tokens.PopExpected(";");
+            }
+            else
+            {
+                methodDef.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
+            }
 
             return methodDef;
         }
