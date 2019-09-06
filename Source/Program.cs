@@ -26,10 +26,32 @@ namespace CSharp2Crayon
                 { "DEBUG", true },
                 { "WINDOWS", true }
             };
+
+            string[] blackListedFiles = new string[] {
+                "Properties/AssemblyInfo.cs", // Not significant to output and is atypical format.
+
+                // The following have syntax stuff that I don't typically use and they'll just be
+                // implemented by Mutil anyway, so don't bother...
+                "Common/JsonParser.cs",
+                "Common/Multimap.cs",
+                "Common/Pair.cs",
+                "Common/Util.cs",
+            };
+
             foreach (string csharpFile in csharpFiles)
             {
                 // blarg
-                if (csharpFile.Replace('\\', '/').EndsWith("Properties/AssemblyInfo.cs")) continue;
+                string canonicalPath = csharpFile.Replace('\\', '/');
+                bool skipMe = false;
+                foreach (string blEntry in blackListedFiles)
+                {
+                    if (canonicalPath.EndsWith(blEntry))
+                    {
+                        skipMe = true;
+                        break;
+                    }
+                }
+                if (skipMe) continue;
 
                 TokenStream tokens = new TokenStream(
                     csharpFile,
