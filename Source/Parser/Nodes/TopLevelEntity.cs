@@ -18,6 +18,7 @@ namespace CSharp2Crayon.Parser.Nodes
         public AccessLevel Access { get; private set; }
         public bool IsOverride { get; private set; }
         public bool IsReadOnly { get; private set; }
+        public bool IsVirtual { get; private set; }
 
         public TopLevelEntity(Token firstToken)
             : base(firstToken)
@@ -38,6 +39,7 @@ namespace CSharp2Crayon.Parser.Nodes
                     case "protected": this.Access = AccessLevel.PROTECTED; break;
                     case "override": this.IsOverride = true; break;
                     case "readonly": this.IsReadOnly = true; break;
+                    case "virtual": this.IsVirtual = true; break;
                     default: throw new System.NotImplementedException();
                 }
             }

@@ -101,11 +101,18 @@ namespace CSharp2Crayon.Parser
                 List<Expression> expressions = new List<Expression>() { root, ParseBitShift(context, tokens) };
                 return new OpChain(expressions, ops);
             }
-            if (tokens.IsNext("is"))
+            if (tokens.IsNext("is") || tokens.IsNext("as"))
             {
                 Token isToken = tokens.Pop();
                 CSharpType type = CSharpType.Parse(tokens);
-                return new IsComparison(root.FirstToken, root, isToken, type);
+                if (isToken.Value == "is")
+                {
+                    return new IsComparison(root.FirstToken, root, isToken, type);
+                }
+                else
+                {
+                    return new AsCasting(root.FirstToken, root, isToken, type);
+                }
             }
             return root;
         }
@@ -327,6 +334,7 @@ namespace CSharp2Crayon.Parser
                         {
                             lambdaArgs.Add(tokens.PopWord());
                         }
+                        tokens.PopExpected(")");
                         Token arrowToken = tokens.PopExpected("=>");
                         Executable[] lambdaBody;
                         if (tokens.IsNext("{"))
@@ -549,7 +557,30 @@ namespace CSharp2Crayon.Parser
 
             if (c == '0' && next.Length > 2 && next[1] == 'x')
             {
-                throw new NotImplementedException(); // Parse hex literal
+                string hex = next.Substring(2);
+                int parsedValue = 0;
+
+                for (int i = 0; i < hex.Length; ++i)
+                {
+                    c = hex[i];
+                    if (c >= '0' && c <= '9')
+                    {
+                        parsedValue = parsedValue * 16 + (c - '0');
+                    }
+                    else if (c >= 'a' && c <= 'f')
+                    {
+                        parsedValue = parsedValue * 16 + (10 + c - 'a');
+                    }
+                    else if (c >= 'A' && c <= 'F')
+                    {
+                        parsedValue = parsedValue * 16 + (10 + c - 'A');
+                    }
+                    else
+                    {
+                        throw new ParserException(token, "Invalid hexidecimal value: '" + hex + "'");
+                    }
+                }
+                return new IntegerConstant(token, parsedValue);
             }
 
             if (c == '.' && next.Length > 1)

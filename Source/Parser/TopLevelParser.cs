@@ -60,6 +60,7 @@ namespace CSharp2Crayon.Parser
                     case "internal":
                     case "abstract":
                     case "override":
+                    case "virtual":
                         if (modifiers == null) modifiers = new List<Token>();
                         modifiers.Add(tokens.Pop());
                         break;
@@ -173,6 +174,11 @@ namespace CSharp2Crayon.Parser
             if (tokens.IsNext(";") || tokens.IsNext("="))
             {
                 return ParseClassField(classDef, context, firstToken, modifiers, type, memberName, tokens);
+            }
+
+            if (tokens.IsNext("[") && memberName.Value == "this")
+            {
+                return ParseIndexProperty(classDef, context, firstToken, modifiers, type, tokens);
             }
 
             if (tokens.IsNext("{"))
@@ -370,6 +376,42 @@ namespace CSharp2Crayon.Parser
 
             return methodDef;
         }
+        private static TopLevelEntity ParseIndexProperty(
+            ClassDefinition classDef,
+            ParserContext context,
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            CSharpType type,
+            TokenStream tokens)
+        {
+            tokens.PopExpected("[");
+            CSharpType indexType = CSharpType.Parse(tokens);
+            Token indexVariableName = tokens.PopWord();
+            tokens.PopExpected("]");
+            tokens.PopExpected("{");
+
+            PropertyBody getter = null;
+            PropertyBody setter = null;
+
+            while (tokens.IsNext("get") || tokens.IsNext("set"))
+            {
+                Token getOrSetToken = tokens.Peek();
+                bool isGet = getOrSetToken.Value == "get";
+                if (!isGet && setter != null) tokens.PopExpected("}"); // intentionally throw
+                if (isGet && getter != null) tokens.PopExpected("set"); //intentionally throw
+                tokens.Pop(); // get/set already fetched with Peek() above.
+                Executable[] code = ExecutableParser.ParseCodeBlock(context, tokens, true);
+                PropertyBody body = new PropertyBody(getOrSetToken, new Dictionary<string, Token>(), isGet);
+                body.Code = code;
+                if (isGet) getter = body;
+                else setter = body;
+            }
+
+            PropertyDefinition indexProperty = new PropertyDefinition(firstToken, modifiers, type, null, getter, setter);
+            indexProperty.IndexType = indexType;
+            indexProperty.IndexVariableName = indexVariableName;
+            return indexProperty;
+        }
 
         private static void ParseArgList(List<CSharpType> typesOut, List<Token> namesOut, List<Token> modifiers, TokenStream tokens)
         {
@@ -378,7 +420,7 @@ namespace CSharp2Crayon.Parser
             while (!tokens.IsNext(")"))
             {
                 if (namesOut.Count > 0) tokens.PopExpected(",");
-                if (tokens.IsNext("params"))
+                if (tokens.IsNext("params") || tokens.IsNext("out"))
                 {
                     modifiers.Add(tokens.Pop());
                 }

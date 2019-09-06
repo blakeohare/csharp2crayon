@@ -9,6 +9,10 @@ namespace CSharp2Crayon.Parser.Nodes
         public PropertyBody Getter { get; private set; }
         public PropertyBody Setter { get; private set; }
 
+        public bool IsIndex { get { return this.IndexVariableName != null; } }
+        public CSharpType IndexType { get; internal set; }
+        public Token IndexVariableName { get; internal set; }
+
         public PropertyDefinition(
             Token firstToken,
             Dictionary<string, Token> topLevelModifiers,
