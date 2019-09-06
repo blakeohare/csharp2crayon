@@ -104,7 +104,7 @@ namespace CSharp2Crayon.Parser
             if (tokens.IsNext("is") || tokens.IsNext("as"))
             {
                 Token isToken = tokens.Pop();
-                CSharpType type = CSharpType.Parse(tokens);
+                CSharpType type = CSharpType.ParseWithoutNullable(tokens);
                 if (isToken.Value == "is")
                 {
                     return new IsComparison(root.FirstToken, root, isToken, type);

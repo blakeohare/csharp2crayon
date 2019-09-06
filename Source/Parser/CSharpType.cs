@@ -82,15 +82,30 @@ namespace CSharp2Crayon.Parser
             return type;
         }
 
-        public static CSharpType TryParse(TokenStream tokens)
+        public static CSharpType ParseWithoutNullable(TokenStream tokens)
+        {
+            CSharpType type = TryParseWithoutNullable(tokens);
+            if (type == null) throw new ParserException(tokens.Peek(), "Expected a type.");
+            return type;
+        }
+
+        public static CSharpType TryParseWithoutNullable(TokenStream tokens)
         {
             tokens.SetTypeParsingMode(true);
-            CSharpType type = TryParseImpl(tokens);
+            CSharpType type = TryParseImpl(tokens, false);
             tokens.SetTypeParsingMode(false);
             return type;
         }
 
-        private static CSharpType TryParseImpl(TokenStream tokens)
+        public static CSharpType TryParse(TokenStream tokens)
+        {
+            tokens.SetTypeParsingMode(true);
+            CSharpType type = TryParseImpl(tokens, true);
+            tokens.SetTypeParsingMode(false);
+            return type;
+        }
+
+        private static CSharpType TryParseImpl(TokenStream tokens, bool allowNullable)
         {
             int tokenState = tokens.CurrentState;
             IList<Token> rootType = GetRootType(tokens);
@@ -107,7 +122,7 @@ namespace CSharp2Crayon.Parser
                 {
                     bool isValid = true;
                     List<CSharpType> generics = new List<CSharpType>();
-                    CSharpType first = TryParseImpl(tokens);
+                    CSharpType first = TryParseImpl(tokens, allowNullable);
                     if (first != null)
                     {
                         while (isValid && !tokens.IsNext(">"))
@@ -118,7 +133,7 @@ namespace CSharp2Crayon.Parser
                             }
                             else
                             {
-                                CSharpType next = TryParseImpl(tokens);
+                                CSharpType next = TryParseImpl(tokens, allowNullable);
                                 if (next == null)
                                 {
                                     isValid = false;
@@ -143,7 +158,7 @@ namespace CSharp2Crayon.Parser
             }
 
             CSharpType output = new CSharpType(rootType, EMPTY_GENERICS);
-            if (tokens.IsNext("?"))
+            if (allowNullable && tokens.IsNext("?"))
             {
                 Token questionMark = tokens.Pop();
                 output = new CSharpType(new Token[] { questionMark }, new CSharpType[] { output });
