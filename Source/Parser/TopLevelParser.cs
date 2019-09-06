@@ -185,7 +185,7 @@ namespace CSharp2Crayon.Parser
                 return ParseClassMethod(classDef, context, firstToken, modifiers, type, memberName, tokens);
             }
 
-            throw new NotImplementedException();
+            throw new ParserException(tokens.Peek(), "Not implemented");
         }
 
         private static TopLevelEntity ParseEnumDefinition(

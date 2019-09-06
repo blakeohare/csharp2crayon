@@ -35,9 +35,9 @@ namespace CSharp2Crayon
                 if (this.isRegularMode && token.Value == ">" && this.index + 1 < this.length)
                 {
                     Token nextToken = this.tokens[this.index + 1];
-                    if (nextToken.Value == ">" && nextToken.Column == token.Column + 1)
+                    if ((nextToken.Value == ">" || nextToken.Value == ">=") && nextToken.Column == token.Column + 1)
                     {
-                        token = new Token(token.File, ">>", token.Column, token.Line);
+                        token = new Token(token.File, token.Value + nextToken.Value, token.Column, token.Line);
                         token.Size = 2;
                     }
                 }
