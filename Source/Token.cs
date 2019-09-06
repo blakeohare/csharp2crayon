@@ -6,6 +6,32 @@
         public string Value { get; private set; }
         public int Column { get; private set; }
         public int Line { get; private set; }
+        public bool IsIdentifier
+        {
+            get
+            {
+                char c = this.Value[0];
+                return (
+                    (c >= 'a' && c <= 'z') ||
+                    (c >= 'A' && c <= 'Z') ||
+                    c == '_');
+            }
+        }
+
+        public bool IsNumber
+        {
+            get
+            {
+                char c = this.Value[0];
+                if (c == '.')
+                {
+                    if (this.Value.Length == 1) return false;
+                    c = this.Value[1];
+                }
+
+                return c >= '0' && c <= '9';
+            }
+        }
 
         internal int Size { get; set; }
 

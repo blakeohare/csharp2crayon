@@ -211,37 +211,113 @@ namespace CSharp2Crayon.Parser
             return null;
         }
 
+        private enum ParenthesisSituation
+        {
+            CAST,
+            LAMBDA_ARG,
+            WRAPPED_EXPRESSION,
+        }
+
+        private static ParenthesisSituation IdentifyParenthesisSituation(TokenStream tokens)
+        {
+            int currentState = tokens.CurrentState;
+            ParenthesisSituation output = IdentifyParenthesisSituationImpl(tokens);
+            tokens.RestoreState(currentState);
+            return output;
+        }
+
+        // this function is called after the first ( is popped off the token stream.
+        // It is destructive to the token stream.
+        private static ParenthesisSituation IdentifyParenthesisSituationImpl(TokenStream tokens)
+        {
+            // if any of these cause an EOF exception, it's a legit EOF exception.
+            // The }'s alone for any body of code that an expression can appear in would be enough padding
+            // to avoid non-legit errors.
+            Token t1 = tokens.Pop();
+            Token t2 = tokens.Pop();
+            Token t3 = tokens.Pop();
+
+            if (!t1.IsIdentifier) return ParenthesisSituation.WRAPPED_EXPRESSION;
+            if (t2.Value == ",") return ParenthesisSituation.LAMBDA_ARG;
+            if (t2.Value == ")" && t3.Value == "=>") return ParenthesisSituation.LAMBDA_ARG;
+
+            if (t2.Value == ")")
+            {
+                switch (t1.Value)
+                {
+                    case "string":
+                    case "int":
+                    case "float":
+                    case "double":
+                    case "bool":
+                    case "object":
+                    case "byte":
+                    case "char":
+                    case "long":
+                        return ParenthesisSituation.CAST;
+                }
+            }
+
+            CSharpType type = CSharpType.TryParse(tokens);
+            if (type == null) return ParenthesisSituation.WRAPPED_EXPRESSION;
+            if (type.Generics.Length > 0) return ParenthesisSituation.CAST;
+            if (!tokens.PopIfPresent(")")) return ParenthesisSituation.WRAPPED_EXPRESSION;
+            if (!tokens.HasMore) return ParenthesisSituation.WRAPPED_EXPRESSION;
+            // At this point you have a sequence words and dots in parentheses.
+            Token next = tokens.Peek();
+            if (next.IsIdentifier || next.IsNumber) return ParenthesisSituation.CAST;
+            char c = next.Value[0];
+            if (c == '(') return ParenthesisSituation.CAST;
+            if (c == '@') return ParenthesisSituation.CAST;
+            if (c == '.') return ParenthesisSituation.WRAPPED_EXPRESSION;
+            if (c == '!') return ParenthesisSituation.CAST;
+            return ParenthesisSituation.WRAPPED_EXPRESSION;
+        }
+
         private static Expression ParseAtomWithSuffix(ParserContext context, TokenStream tokens)
         {
             Expression root;
             if (tokens.IsNext("("))
             {
                 Token openParen = tokens.Pop();
-                root = Parse(context, tokens);
-                if (root is Variable && tokens.IsNext(","))
+                switch (IdentifyParenthesisSituation(tokens))
                 {
-                    List<Token> lambdaArgs = new List<Token>() { root.FirstToken };
-                    // this could be an argument list
-                    while (tokens.PopIfPresent(","))
-                    {
-                        lambdaArgs.Add(tokens.PopWord());
-                    }
-                    Token arrowToken = tokens.PopExpected("=>");
-                    Executable[] lambdaBody;
-                    if (tokens.IsNext("{"))
-                    {
-                        lambdaBody = ExecutableParser.ParseCodeBlock(context, tokens, true);
-                    }
-                    else
-                    {
-                        Expression expr = Parse(context, tokens);
-                        lambdaBody = new Executable[] {
-                            new ReturnStatement(expr.FirstToken, expr)
-                        };
-                    }
-                    return new Lambda(openParen, lambdaArgs, arrowToken, lambdaBody);
+                    case ParenthesisSituation.CAST:
+                        CSharpType castType = CSharpType.Parse(tokens);
+                        tokens.PopExpected(")");
+                        Expression castValue = ParseAtomWithSuffix(context, tokens);
+                        return new CastExpression(openParen, castType, castValue);
+
+                    case ParenthesisSituation.LAMBDA_ARG:
+                        List<Token> lambdaArgs = new List<Token>() { tokens.PopWord() };
+
+                        while (tokens.PopIfPresent(","))
+                        {
+                            lambdaArgs.Add(tokens.PopWord());
+                        }
+                        Token arrowToken = tokens.PopExpected("=>");
+                        Executable[] lambdaBody;
+                        if (tokens.IsNext("{"))
+                        {
+                            lambdaBody = ExecutableParser.ParseCodeBlock(context, tokens, true);
+                        }
+                        else
+                        {
+                            Expression expr = Parse(context, tokens);
+                            lambdaBody = new Executable[] {
+                                new ReturnStatement(expr.FirstToken, expr)
+                            };
+                        }
+                        return new Lambda(openParen, lambdaArgs, arrowToken, lambdaBody);
+
+                    case ParenthesisSituation.WRAPPED_EXPRESSION:
+                        root = Parse(context, tokens);
+                        tokens.PopExpected(")");
+                        break;
+
+                    default:
+                        throw new Exception(); // not valid
                 }
-                tokens.PopExpected(")");
             }
             else
             {
