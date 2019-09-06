@@ -2,7 +2,7 @@
 
 namespace CSharp2Crayon.Parser.Nodes
 {
-    public class ClassDefinition : TopLevelEntity
+    public abstract class ClassLikeDefinition : TopLevelEntity
     {
         public Token ClassToken { get; private set; }
         public Token Name { get; private set; }
@@ -10,7 +10,7 @@ namespace CSharp2Crayon.Parser.Nodes
 
         private List<TopLevelEntity> membersBuilder = new List<TopLevelEntity>();
 
-        public ClassDefinition(
+        public ClassLikeDefinition(
             Token firstToken,
             Dictionary<string, Token> modifiers,
             Token classToken,
@@ -29,5 +29,29 @@ namespace CSharp2Crayon.Parser.Nodes
             // TODO: check types
             this.membersBuilder.Add(tle);
         }
+    }
+
+    public class ClassDefinition : ClassLikeDefinition
+    {
+        public ClassDefinition(
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            Token classToken,
+            Token classNameToken,
+            List<CSharpType> subClassesAndSuch)
+            : base(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch)
+        { }
+    }
+
+    public class InterfaceDefinition : ClassLikeDefinition
+    {
+        public InterfaceDefinition(
+            Token firstToken,
+            Dictionary<string, Token> modifiers,
+            Token classToken,
+            Token classNameToken,
+            List<CSharpType> subClassesAndSuch)
+            : base(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch)
+        { }
     }
 }

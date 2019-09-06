@@ -1,12 +1,11 @@
 ﻿using CSharp2Crayon.Parser.Nodes;
-using System;
 using System.Collections.Generic;
 
 namespace CSharp2Crayon.Parser
 {
     public static class TopLevelParser
     {
-        public static Nodes.TopLevelEntity Parse(ParserContext context, TokenStream tokens)
+        public static TopLevelEntity Parse(ParserContext context, TokenStream tokens)
         {
             if (!tokens.HasMore)
             {
@@ -24,6 +23,7 @@ namespace CSharp2Crayon.Parser
                     EnsureModifiersEmpty(modifiers, firstToken);
                     return ParseNamespace(context, tokens);
 
+                case "interface":
                 case "class":
                     return ParseClass(context, firstToken, modifiers, tokens);
 
@@ -115,9 +115,15 @@ namespace CSharp2Crayon.Parser
             return ns;
         }
 
-        public static ClassDefinition ParseClass(ParserContext context, Token firstToken, Dictionary<string, Token> modifiers, TokenStream tokens)
+        public static ClassLikeDefinition ParseClass(ParserContext context, Token firstToken, Dictionary<string, Token> modifiers, TokenStream tokens)
         {
-            Token classToken = tokens.PopExpected("class");
+            if (!tokens.IsNext("class") && !tokens.IsNext("interface"))
+            {
+                tokens.PopExpected("class"); // intentionally throw
+            }
+            Token classToken = tokens.Pop();
+            bool isInterface = classToken.Value == "interface";
+
             Token classNameToken = tokens.PopWord();
             List<CSharpType> subClassesAndSuch = new List<CSharpType>();
             if (tokens.PopIfPresent(":"))
@@ -133,16 +139,29 @@ namespace CSharp2Crayon.Parser
             }
 
             tokens.PopExpected("{");
-            ClassDefinition cd = new ClassDefinition(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch);
+            ClassLikeDefinition cd;
+            if (isInterface)
+            {
+                cd = new InterfaceDefinition(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch);
+            }
+            else
+            {
+                cd = new ClassDefinition(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch);
+            }
+
             while (!tokens.PopIfPresent("}"))
             {
-                TopLevelEntity classMember = ParseClassMember(cd, context, tokens);
+                TopLevelEntity classMember = ParseClassMember(cd, classNameToken, context, tokens);
                 cd.AddMember(classMember);
             }
             return cd;
         }
 
-        public static TopLevelEntity ParseClassMember(ClassDefinition classDef, ParserContext context, TokenStream tokens)
+        public static TopLevelEntity ParseClassMember(
+            ClassLikeDefinition classDef,
+            Token className,
+            ParserContext context,
+            TokenStream tokens)
         {
             Token firstToken = tokens.Peek();
             Dictionary<string, Token> modifiers = ParseModifiers(context, tokens);
@@ -164,26 +183,26 @@ namespace CSharp2Crayon.Parser
 
             CSharpType type = CSharpType.TryParse(tokens);
 
-            if (tokens.IsNext("(") && type.SimpleTypeName == classDef.Name.Value)
+            if (tokens.IsNext("(") && type.SimpleTypeName == className.Value)
             {
-                return ParseClassConstructor(classDef, context, firstToken, modifiers, type, tokens);
+                return ParseClassConstructor(context, firstToken, modifiers, type, tokens);
             }
 
             Token memberName = tokens.PopWord();
 
             if (tokens.IsNext(";") || tokens.IsNext("="))
             {
-                return ParseClassField(classDef, context, firstToken, modifiers, type, memberName, tokens);
+                return ParseClassField(context, firstToken, modifiers, type, memberName, tokens);
             }
 
             if (tokens.IsNext("[") && memberName.Value == "this")
             {
-                return ParseIndexProperty(classDef, context, firstToken, modifiers, type, tokens);
+                return ParseIndexProperty(context, firstToken, modifiers, type, tokens);
             }
 
             if (tokens.IsNext("{"))
             {
-                return ParseClassProperty(classDef, context, firstToken, modifiers, type, memberName, tokens);
+                return ParseClassProperty(context, firstToken, modifiers, type, memberName, tokens);
             }
 
             if (tokens.IsNext("("))
@@ -240,7 +259,6 @@ namespace CSharp2Crayon.Parser
         }
 
         private static TopLevelEntity ParseClassConstructor(
-            ClassDefinition classDef,
             ParserContext context,
             Token firstToken,
             Dictionary<string, Token> modifiers,
@@ -287,7 +305,6 @@ namespace CSharp2Crayon.Parser
         }
 
         private static TopLevelEntity ParseClassField(
-            ClassDefinition classDef,
             ParserContext context,
             Token firstToken,
             Dictionary<string, Token> modifiers,
@@ -306,7 +323,6 @@ namespace CSharp2Crayon.Parser
         }
 
         private static TopLevelEntity ParseClassProperty(
-            ClassDefinition classDef,
             ParserContext context,
             Token firstToken,
             Dictionary<string, Token> modifiers,
@@ -350,7 +366,7 @@ namespace CSharp2Crayon.Parser
         }
 
         private static TopLevelEntity ParseClassMethod(
-            ClassDefinition classDef,
+            ClassLikeDefinition classDef,
             ParserContext context,
             Token firstToken,
             Dictionary<string, Token> modifiers,
@@ -372,7 +388,7 @@ namespace CSharp2Crayon.Parser
                 argTypes,
                 argModifiers);
 
-            if (methodDef.IsAbstract)
+            if (methodDef.IsAbstract || classDef is InterfaceDefinition)
             {
                 tokens.PopExpected(";");
             }
@@ -384,7 +400,6 @@ namespace CSharp2Crayon.Parser
             return methodDef;
         }
         private static TopLevelEntity ParseIndexProperty(
-            ClassDefinition classDef,
             ParserContext context,
             Token firstToken,
             Dictionary<string, Token> modifiers,
