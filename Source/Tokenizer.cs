@@ -36,8 +36,10 @@ namespace CSharp2Crayon
             COMMENT,
         }
 
-        public static IList<Token> Tokenize(string filename, string content)
+        public static IList<Token> Tokenize(string filename, string content, Dictionary<string, bool> preprocessorConstants)
         {
+            content = Tokenizer.ApplyPreprocessorConstants(filename, content, preprocessorConstants);
+
             content += " ";
             int[] lines = new int[content.Length];
             int[] cols = new int[content.Length];
@@ -210,6 +212,105 @@ namespace CSharp2Crayon
             }
 
             return tokens;
+        }
+
+        private enum PreprocessToggleState
+        {
+            NONE,
+            NOT_APPLIED,
+            APPLY,
+            DONE,
+        }
+        private static string ApplyPreprocessorConstants(string filename, string code, Dictionary<string, bool> constants)
+        {
+            string[] lines = code.Split('\n');
+            PreprocessToggleState state = PreprocessToggleState.NONE;
+            for (int i = 0; i < lines.Length; ++i)
+            {
+                string line = lines[i];
+                if (line.Length > 0 && line[0] == '#')
+                {
+                    if (line.StartsWith("#if ") || line.StartsWith("#elif "))
+                    {
+                        bool isElif = line.StartsWith("#elif");
+                        bool isIf = !isElif;
+
+                        if (isIf)
+                        {
+                            if (state != PreprocessToggleState.NONE)
+                            {
+                                throw new ParserException(filename + ": Unexpected #if on line " + (i + 1));
+                            }
+                        }
+                        else
+                        {
+                            if (state == PreprocessToggleState.NONE)
+                            {
+                                throw new ParserException(filename + ": Unexpected #elif on line " + (i + 1));
+                            }
+                        }
+                        if (state == PreprocessToggleState.APPLY)
+                        {
+                            state = PreprocessToggleState.DONE;
+                        }
+                        else if (state == PreprocessToggleState.DONE)
+                        {
+                            // ignore
+                        }
+                        else
+                        {
+                            string constantName = line.Substring(line.IndexOf(' ') + 1).Trim();
+                            bool value = constants.ContainsKey(constantName) && constants[constantName];
+                            if (value)
+                            {
+                                state = PreprocessToggleState.APPLY;
+                            }
+                            else
+                            {
+                                state = PreprocessToggleState.NOT_APPLIED;
+                            }
+                        }
+                    }
+                    else if (line.StartsWith("#else"))
+                    {
+                        if (state == PreprocessToggleState.NOT_APPLIED)
+                        {
+                            state = PreprocessToggleState.APPLY;
+                        }
+                        else if (state == PreprocessToggleState.APPLY)
+                        {
+                            state = PreprocessToggleState.DONE;
+                        }
+                    }
+                    else if (line.StartsWith("#endif"))
+                    {
+                        state = PreprocessToggleState.NONE;
+                    }
+                    else
+                    {
+                        throw new ParserException(filename + ": Unexpected # directive on line " + (i + 1));
+                    }
+                    line = "";
+                }
+                else
+                {
+                    switch (state)
+                    {
+                        case PreprocessToggleState.NONE:
+                        case PreprocessToggleState.APPLY:
+                            break;
+
+                        // If the condition doesn't apply or has already been applied, ignore the line
+                        case PreprocessToggleState.DONE:
+                        case PreprocessToggleState.NOT_APPLIED:
+                            line = "";
+                            break;
+                    }
+                }
+                lines[i] = line;
+            }
+
+            return string.Join('\n', lines);
         }
     }
 }

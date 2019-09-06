@@ -65,9 +65,9 @@ namespace CSharp2Crayon
 
         private InternalStream stream;
 
-        public TokenStream(string name, string content)
+        public TokenStream(string name, string content, Dictionary<string, bool> buildConstants)
         {
-            this.stream = new InternalStream(Tokenizer.Tokenize(name, content));
+            this.stream = new InternalStream(Tokenizer.Tokenize(name, content, buildConstants));
         }
 
         public int CurrentState { get { return this.stream.index; } }

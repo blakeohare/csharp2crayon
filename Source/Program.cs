@@ -1,6 +1,7 @@
 ﻿using CSharp2Crayon.Parser;
 using CSharp2Crayon.Parser.Nodes;
 using System;
+using System.Collections.Generic;
 
 namespace CSharp2Crayon
 {
@@ -21,12 +22,16 @@ namespace CSharp2Crayon
             string slnDir = System.IO.Path.GetDirectoryName(slnPath);
             string[] csharpFiles = Util.GatherFiles(slnDir, ".cs");
             ParserContext parser = new ParserContext();
-
+            Dictionary<string, bool> buildConstants = new Dictionary<string, bool>() {
+                { "DEBUG", true },
+                { "WINDOWS", true }
+            };
             foreach (string csharpFile in csharpFiles)
             {
                 TokenStream tokens = new TokenStream(
                     csharpFile,
-                    Util.ReadFile(System.IO.Path.Combine(slnDir, csharpFile)));
+                    Util.ReadFile(System.IO.Path.Combine(slnDir, csharpFile)),
+                    buildConstants);
 
                 while (tokens.HasMore)
                 {
