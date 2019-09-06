@@ -39,12 +39,13 @@ namespace CSharp2Crayon.Parser
                 case "for": return ParseForLoop(context, tokens);
                 case "foreach": return ParseForEachLoop(context, tokens);
                 case "if": return ParseIfStatement(context, tokens);
-                case "while": throw new NotImplementedException();
-                case "do": throw new NotImplementedException();
-                case "switch": throw new NotImplementedException();
+                case "while": throw new ParserException(tokens.Peek(), "Not implemented: while loops");
+                case "do": throw new ParserException(tokens.Peek(), "Not implemented: do loops");
+                case "switch": return ParseSwitchStatement(context, tokens);
                 case "throw": return ParseThrowStatement(context, tokens);
                 case "return": return ParseReturnStatement(context, tokens);
                 case "using": return ParseUsingStatement(context, tokens);
+                case "try": return ParseTryStatement(context, tokens);
                 default:
                     break;
             }
@@ -186,12 +187,99 @@ namespace CSharp2Crayon.Parser
             return new ForEachLoop(foreachToken, type, variableToken, listExpression, loopBody);
         }
 
+        private static Executable ParseSwitchStatement(ParserContext context, TokenStream tokens)
+        {
+            Token switchToken = tokens.PopExpected("switch");
+            tokens.PopExpected("(");
+            Expression condition = ExpressionParser.Parse(context, tokens);
+            tokens.PopExpected(")");
+            tokens.PopExpected("{");
+            List<Token> caseTokens = new List<Token>();
+            List<Expression> cases = new List<Expression>(); // a null entry indicates default
+            List<Executable[]> codeForCase = new List<Executable[]>();
+            while (!tokens.PopIfPresent("}"))
+            {
+                if (tokens.IsNext("case") || tokens.IsNext("default"))
+                {
+                    if (tokens.IsNext("case"))
+                    {
+                        caseTokens.Add(tokens.PopExpected("case"));
+                        cases.Add(ExpressionParser.Parse(context, tokens));
+                        tokens.PopExpected(":");
+                    }
+                    else
+                    {
+                        caseTokens.Add(tokens.PopExpected("default"));
+                        tokens.PopExpected(":");
+                        cases.Add(null);
+                    }
+                }
+
+                List<Executable> codeForCurrentBlock = new List<Executable>();
+                while (!tokens.IsNext("case") && !tokens.IsNext("default") && !tokens.IsNext("}"))
+                {
+                    // these are the 3 things that can appear in a switch statement. If it's not one of these,
+                    // then it's a line of code that belongs to the previous case/default.
+                    codeForCurrentBlock.Add(Parse(context, tokens));
+                }
+                codeForCase.Add(codeForCurrentBlock == null ? null : codeForCurrentBlock.ToArray());
+            }
+
+            return new SwitchStatement(switchToken, condition, caseTokens, cases, codeForCase);
+        }
+
         private static Executable ParseThrowStatement(ParserContext context, TokenStream tokens)
         {
             Token throwToken = tokens.PopExpected("throw");
             Expression expr = ExpressionParser.Parse(context, tokens);
             tokens.PopExpected(";");
             return new ThrowStatement(throwToken, expr);
+        }
+
+        private static Executable ParseTryStatement(ParserContext context, TokenStream tokens)
+        {
+            Token tryToken = tokens.PopExpected("try");
+            Executable[] tryCode = ExecutableParser.ParseCodeBlock(context, tokens, true);
+
+            List<Token> catchTokens = new List<Token>();
+            List<CSharpType> catchBlockTypes = new List<CSharpType>();
+            List<Token> catchBlockVariables = new List<Token>();
+            List<Executable[]> catchBlockCode = new List<Executable[]>();
+            Token finallyToken = null;
+            Executable[] finallyCode = null;
+
+            while (tokens.IsNext("catch"))
+            {
+                catchTokens.Add(tokens.Pop());
+                tokens.PopExpected("(");
+                catchBlockTypes.Add(CSharpType.Parse(tokens));
+                if (!tokens.PopIfPresent(")"))
+                {
+                    catchBlockVariables.Add(tokens.PopWord());
+                    tokens.PopExpected(")");
+                }
+                else
+                {
+                    catchBlockVariables.Add(null);
+                }
+                catchBlockCode.Add(ParseCodeBlock(context, tokens, true));
+            }
+
+            if (tokens.IsNext("finally"))
+            {
+                finallyToken = tokens.Pop();
+                finallyCode = ParseCodeBlock(context, tokens, true);
+            }
+
+            return new TryStatement(
+                tryToken,
+                tryCode,
+                catchTokens,
+                catchBlockTypes,
+                catchBlockVariables,
+                catchBlockCode,
+                finallyToken,
+                finallyCode);
         }
 
         private static Executable ParseUsingStatement(ParserContext context, TokenStream tokens)

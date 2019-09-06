@@ -5,6 +5,7 @@
         public Expression Root { get; private set; }
         public Token DotToken { get; private set; }
         public Token FieldName { get; private set; }
+        public CSharpType[] InlineTypeSpecification { get; set; } // e.g. .Cast<string>()
 
         public DotField(Token firstToken, Expression root, Token dotToken, Token fieldName)
             : base(firstToken)

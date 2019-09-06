@@ -180,6 +180,37 @@ namespace CSharp2Crayon.Parser
             return ParseAtomWithSuffix(context, tokens);
         }
 
+        private static CSharpType[] MaybeParseOutOneOfThoseInlineTypeSpecificationsForFunctionInvocations(TokenStream tokens)
+        {
+            int state = tokens.CurrentState;
+            if (!tokens.PopIfPresent("<")) return null;
+
+            List<CSharpType> types = new List<CSharpType>();
+            CSharpType type = CSharpType.TryParse(tokens);
+            if (type == null)
+            {
+                tokens.RestoreState(state);
+                return null;
+            }
+            types.Add(type);
+            while (tokens.PopIfPresent(","))
+            {
+                type = CSharpType.TryParse(tokens);
+                if (type == null)
+                {
+                    tokens.RestoreState(state);
+                    return null;
+                }
+                types.Add(type);
+            }
+            if (tokens.PopIfPresent(">") && tokens.IsNext("("))
+            {
+                return types.ToArray();
+            }
+            tokens.RestoreState(state);
+            return null;
+        }
+
         private static Expression ParseAtomWithSuffix(ParserContext context, TokenStream tokens)
         {
             Expression root;
@@ -233,6 +264,24 @@ namespace CSharp2Crayon.Parser
                         tokens.PopExpected("]");
                         root = new BracketIndex(root, openBracket, index);
                         break;
+                    case "<":
+                        if (root is DotField)
+                        {
+                            CSharpType[] functionInvocationTypeSpecification = MaybeParseOutOneOfThoseInlineTypeSpecificationsForFunctionInvocations(tokens);
+                            if (functionInvocationTypeSpecification != null)
+                            {
+                                ((DotField)root).InlineTypeSpecification = functionInvocationTypeSpecification;
+                            }
+                            else
+                            {
+                                anythingInteresting = false;
+                            }
+                        }
+                        else
+                        {
+                            anythingInteresting = false;
+                        }
+                        break;
                     case "(":
                         Token openParen = tokens.Pop();
                         List<Expression> args = new List<Expression>();
@@ -251,6 +300,27 @@ namespace CSharp2Crayon.Parser
                             args.Add(Parse(context, tokens));
                         }
                         root = new FunctionInvocation(root.FirstToken, root, openParen, args, outTokens);
+                        break;
+                    case "{": // e.g. new List<int>() { 1, 2, 3 }. This only follows a constructor.
+                        FunctionInvocation fi = root as FunctionInvocation;
+                        ConstructorInvocationFragment cif = fi == null ? null : (ConstructorInvocationFragment)fi.Root;
+                        if (root is FunctionInvocation && ((FunctionInvocation)root).Root is ConstructorInvocationFragment)
+                        {
+                            tokens.Pop();
+                            bool nextAllowed = true;
+                            List<Expression> constructorItems = new List<Expression>();
+                            while (!tokens.PopIfPresent("}"))
+                            {
+                                if (!nextAllowed) tokens.PopExpected("}"); // intentionally throw
+                                constructorItems.Add(Parse(context, tokens));
+                                nextAllowed = tokens.PopIfPresent(",");
+                            }
+                            cif.InitialDataSuffix = constructorItems.ToArray();
+                        }
+                        else
+                        {
+                            throw new ParserException(tokens.Peek(), "Unexpected '{'");
+                        }
                         break;
                     default:
                         anythingInteresting = false;
