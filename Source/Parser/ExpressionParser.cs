@@ -230,6 +230,8 @@ namespace CSharp2Crayon.Parser
         // It is destructive to the token stream.
         private static ParenthesisSituation IdentifyParenthesisSituationImpl(TokenStream tokens)
         {
+            int state = tokens.CurrentState;
+
             // if any of these cause an EOF exception, it's a legit EOF exception.
             // The }'s alone for any body of code that an expression can appear in would be enough padding
             // to avoid non-legit errors.
@@ -258,6 +260,8 @@ namespace CSharp2Crayon.Parser
                 }
             }
 
+            tokens.RestoreState(state);
+
             CSharpType type = CSharpType.TryParse(tokens);
             if (type == null) return ParenthesisSituation.WRAPPED_EXPRESSION;
             if (type.Generics.Length > 0) return ParenthesisSituation.CAST;
@@ -280,6 +284,7 @@ namespace CSharp2Crayon.Parser
             if (tokens.IsNext("("))
             {
                 Token openParen = tokens.Pop();
+
                 switch (IdentifyParenthesisSituation(tokens))
                 {
                     case ParenthesisSituation.CAST:

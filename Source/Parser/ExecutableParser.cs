@@ -40,7 +40,7 @@ namespace CSharp2Crayon.Parser
                 case "foreach": return ParseForEachLoop(context, tokens);
                 case "if": return ParseIfStatement(context, tokens);
                 case "while": throw new ParserException(tokens.Peek(), "Not implemented: while loops");
-                case "do": throw new ParserException(tokens.Peek(), "Not implemented: do loops");
+                case "do": return ParseDoWhileLoop(context, tokens);
                 case "switch": return ParseSwitchStatement(context, tokens);
                 case "throw": return ParseThrowStatement(context, tokens);
                 case "return": return ParseReturnStatement(context, tokens);
@@ -172,6 +172,18 @@ namespace CSharp2Crayon.Parser
 
             Executable[] loopBody = ParseCodeBlock(context, tokens, false);
             return new ForLoop(forToken, initCode, condition, stepCode, loopBody);
+        }
+
+        private static Executable ParseDoWhileLoop(ParserContext context, TokenStream tokens)
+        {
+            Token doToken = tokens.PopExpected("do");
+            Executable[] code = ParseCodeBlock(context, tokens, true);
+            Token whileToken = tokens.PopExpected("while");
+            tokens.PopExpected("(");
+            Expression condition = ExpressionParser.Parse(context, tokens);
+            tokens.PopExpected(")");
+            tokens.PopExpected(";");
+            return new DoWhileLoop(doToken, code, condition);
         }
 
         private static Executable ParseForEachLoop(ParserContext context, TokenStream tokens)

@@ -5,6 +5,12 @@ namespace CSharp2Crayon
 {
     public class TokenStream
     {
+        public override string ToString()
+        {
+            if (!this.HasMore) return "TokenStream -- Next: EOF";
+            return "TokenStream -- Next: " + this.PeekValue();
+        }
+
         private class InternalStream
         {
             private Token[] tokens;
