@@ -585,7 +585,12 @@ namespace CSharp2Crayon.Parser
 
             if (c == '.' && next.Length > 1)
             {
-                throw new NotImplementedException(); // parse float
+                double value;
+                if (!double.TryParse(next, out value))
+                {
+                    throw new ParserException(token, "Invalid double constant: '" + next + "'");
+                }
+                return new DoubleConstant(token, value);
             }
 
             if (c >= '0' && c <= '9')
