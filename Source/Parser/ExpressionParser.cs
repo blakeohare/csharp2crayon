@@ -263,7 +263,7 @@ namespace CSharp2Crayon.Parser
             tokens.RestoreState(state);
 
             CSharpType type = CSharpType.TryParse(tokens);
-            if (type == null) return ParenthesisSituation.WRAPPED_EXPRESSION;
+            if (type == null || !tokens.IsNext(")")) return ParenthesisSituation.WRAPPED_EXPRESSION;
             if (type.Generics.Length > 0) return ParenthesisSituation.CAST;
             if (!tokens.PopIfPresent(")")) return ParenthesisSituation.WRAPPED_EXPRESSION;
             if (!tokens.HasMore) return ParenthesisSituation.WRAPPED_EXPRESSION;
@@ -419,7 +419,8 @@ namespace CSharp2Crayon.Parser
                             while (!tokens.PopIfPresent("}"))
                             {
                                 if (!nextAllowed) tokens.PopExpected("}"); // intentionally throw
-                                switch (format) {
+                                switch (format)
+                                {
                                     case ConstructorSuffixData.KVP_ENTRIES:
                                         tokens.PopExpected("{");
                                         kvpKeys.Add(Parse(context, tokens));

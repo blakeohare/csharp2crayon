@@ -10,6 +10,7 @@ namespace CSharp2Crayon.Parser
         public Token[] RootType { get; private set; }
         public CSharpType[] Generics { get; private set; }
         public bool IsArray { get { return this.RootType[0].Value == "["; } }
+        public bool IsNullable { get { return this.RootType[0].Value == "?"; } }
 
         public override string ToString()
         {
@@ -24,6 +25,11 @@ namespace CSharp2Crayon.Parser
             {
                 this.Generics[0].ToStringImpl(sb);
                 sb.Append("[]");
+            }
+            else if (this.IsNullable)
+            {
+                this.Generics[0].ToStringImpl(sb);
+                sb.Append('?');
             }
             else
             {
@@ -137,6 +143,12 @@ namespace CSharp2Crayon.Parser
             }
 
             CSharpType output = new CSharpType(rootType, EMPTY_GENERICS);
+            if (tokens.IsNext("?"))
+            {
+                Token questionMark = tokens.Pop();
+                output = new CSharpType(new Token[] { questionMark }, new CSharpType[] { output });
+            }
+
             if (tokens.IsNext("["))
             {
                 output = ParseOutArraySuffix(output, tokens);
