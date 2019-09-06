@@ -26,6 +26,7 @@ namespace CSharp2Crayon
                         case '"': sb.Append('"'); break;
                         case '\'': sb.Append("'"); break;
                         case '0': sb.Append('\0'); break;
+                        case 'b': sb.Append('\b'); break;
                         default:
                             throw new ParserException(token, "Invalid escape sequence: \\" + c);
                     }
