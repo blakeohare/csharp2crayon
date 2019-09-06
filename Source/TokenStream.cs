@@ -154,7 +154,7 @@ namespace CSharp2Crayon
             for (int i = 1; i < values.Length; ++i)
             {
                 token = this.stream.Peek();
-                if (token == null)
+                if (token == null || token.Value != values[i])
                 {
                     result = false;
                     break;

@@ -289,7 +289,35 @@ namespace CSharp2Crayon.Parser
                     {
                         throw new ParserException(newToken, "'new' keyword must be followed by a className");
                     }
-                    if (!tokens.IsNext("(")) tokens.PopExpected("(");
+                    if (!tokens.IsNext("("))
+                    {
+                        // could be a new array of which there are two ways to define it...
+                        if (className.IsArray && tokens.IsNext("{"))
+                        {
+                            List<Expression> arrayItems = new List<Expression>();
+                            tokens.PopExpected("{");
+                            bool nextAllowed = true;
+                            while (!tokens.PopIfPresent("}"))
+                            {
+                                if (!nextAllowed) tokens.PopExpected("}");
+                                arrayItems.Add(ExpressionParser.Parse(context, tokens));
+                                nextAllowed = tokens.PopIfPresent(",");
+                            }
+                            return new ArrayInitialization(newToken, className.Generics[0], null, arrayItems);
+                        }
+
+                        if (tokens.IsNext("["))
+                        {
+                            // a new array with specified length
+                            tokens.PopExpected("[");
+                            Expression arrayLength = ExpressionParser.Parse(context, tokens);
+                            tokens.PopExpected("]");
+                            return new ArrayInitialization(newToken, className, arrayLength, null);
+                        }
+
+                        // if this isn't an array construction, then give a reasonable error message...
+                        tokens.PopExpected("(");
+                    }
                     return new ConstructorInvocationFragment(newToken, className);
 
                 case "@":
