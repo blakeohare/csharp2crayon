@@ -11,6 +11,7 @@ namespace CSharp2Crayon.Parser
             {
                 throw new ParserException("Unexpected EOF");
             }
+
             Token firstToken = tokens.Peek();
             Dictionary<string, Token> modifiers = ParseModifiers(context, tokens);
             string next = tokens.PeekValue() ?? "";

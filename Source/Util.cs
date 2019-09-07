@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace CSharp2Crayon
 {
@@ -9,7 +10,7 @@ namespace CSharp2Crayon
             return System.IO.File.ReadAllText(path);
         }
 
-        public static string[] GatherFiles(string directory, string extension)
+        public static string[] GatherFiles(string directory, string extension, ICollection<string> blackListedFiles)
         {
             List<string> output = new List<string>();
             extension = extension.ToLower();
@@ -20,7 +21,19 @@ namespace CSharp2Crayon
 
             GatherFilesImpl(output, directory, "", extension);
 
-            return output.ToArray();
+            return output
+                .Where<string>(path => {
+                    string canonicalPath = path.Replace('\\', '/');
+                    foreach (string blackListItem in blackListedFiles)
+                    {
+                        if (canonicalPath.EndsWith(blackListItem))
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .ToArray();
         }
 
         private static void GatherFilesImpl(List<string> output, string rootDirectory, string relative, string extension)
