@@ -19,6 +19,7 @@ namespace CSharp2Crayon.Parser.Nodes
         public bool IsOverride { get; private set; }
         public bool IsReadOnly { get; private set; }
         public bool IsVirtual { get; private set; }
+        public FileContext FileContext { get; set; }
 
         public TopLevelEntity(Token firstToken)
             : base(firstToken)

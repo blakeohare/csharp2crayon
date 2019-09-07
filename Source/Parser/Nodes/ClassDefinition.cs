@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace CSharp2Crayon.Parser.Nodes
 {
@@ -9,6 +10,7 @@ namespace CSharp2Crayon.Parser.Nodes
         public CSharpType[] RawSubClassInfoTokens { get; private set; }
 
         private List<TopLevelEntity> membersBuilder = new List<TopLevelEntity>();
+        private TopLevelEntity[] members = null;
 
         public ClassLikeDefinition(
             Token firstToken,
@@ -27,7 +29,20 @@ namespace CSharp2Crayon.Parser.Nodes
         public void AddMember(TopLevelEntity tle)
         {
             // TODO: check types
+            this.members = null;
             this.membersBuilder.Add(tle);
+        }
+
+        public TopLevelEntity[] Members
+        {
+            get
+            {
+                if (this.members == null)
+                {
+                    this.members = this.membersBuilder.ToArray();
+                }
+                return this.members;
+            }
         }
     }
 
@@ -41,6 +56,16 @@ namespace CSharp2Crayon.Parser.Nodes
             List<CSharpType> subClassesAndSuch)
             : base(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch)
         { }
+
+        public ClassLikeDefinition[] NestedClasses
+        {
+            get { return this.Members.OfType<ClassLikeDefinition>().ToArray(); }
+        }
+
+        public EnumDefinition[] NestedEnums
+        {
+            get { return this.Members.OfType<EnumDefinition>().ToArray(); }
+        }
     }
 
     public class InterfaceDefinition : ClassLikeDefinition

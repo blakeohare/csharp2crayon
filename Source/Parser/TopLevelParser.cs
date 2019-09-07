@@ -7,6 +7,13 @@ namespace CSharp2Crayon.Parser
     {
         public static TopLevelEntity Parse(ParserContext context, TokenStream tokens)
         {
+            TopLevelEntity tle = ParseImpl(context, tokens);
+            tle.FileContext = context.ActiveFileContext;
+            return tle;
+        }
+
+        private static TopLevelEntity ParseImpl(ParserContext context, TokenStream tokens)
+        {
             if (!tokens.HasMore)
             {
                 throw new ParserException("Unexpected EOF");
