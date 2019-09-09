@@ -3,8 +3,8 @@
     public class DoubleConstant : Expression
     {
         public double Value { get; private set; }
-        public DoubleConstant(Token firstToken, double value)
-            : base(firstToken)
+        public DoubleConstant(Token firstToken, double value, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Value = value;
         }

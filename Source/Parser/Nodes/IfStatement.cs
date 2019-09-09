@@ -10,8 +10,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Token ElseToken { get; private set; }
         public Executable[] ElseCode { get; private set; }
 
-        public IfStatement(Token ifToken, Expression condition, IList<Executable> ifCode, Token elseToken, IList<Executable> elseCode)
-            : base(ifToken)
+        public IfStatement(Token ifToken, Expression condition, IList<Executable> ifCode, Token elseToken, IList<Executable> elseCode, TopLevelEntity parent)
+            : base(ifToken, parent)
         {
             this.Condition = condition;
             this.IfCode = ifCode.ToArray();

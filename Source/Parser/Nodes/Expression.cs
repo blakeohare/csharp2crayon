@@ -2,11 +2,20 @@
 {
     public abstract class Expression : Entity
     {
-        public ResolvedType Type { get; internal set; }
+        private TopLevelEntity parent;
 
-        public Expression(Token firstToken)
+        public ResolvedType ResolvedType { get; internal set; }
+
+        public Expression(Token firstToken, TopLevelEntity parent)
             : base(firstToken)
-        { }
+        {
+            this.parent = parent;
+        }
+
+        protected ResolvedType DoTypeLookup(CSharpType type, ParserContext context)
+        {
+            return this.parent.DoTypeLookup(type, context);
+        }
 
         public abstract Expression ResolveTypes(ParserContext context);
     }

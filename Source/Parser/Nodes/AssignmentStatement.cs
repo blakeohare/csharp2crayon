@@ -8,8 +8,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Expression ValueExpression { get; private set; }
         public Token AssignmentOp { get; private set; }
 
-        public AssignmentStatement(Token firstToken, Expression targetExpression, Token assignmentToken, Expression valueExpression)
-            : base(firstToken)
+        public AssignmentStatement(Token firstToken, Expression targetExpression, Token assignmentToken, Expression valueExpression, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.AssignmentOp = assignmentToken;
             this.TargetExpression = targetExpression;

@@ -6,7 +6,7 @@ namespace CSharp2Crayon.Parser
 {
     public static class ExecutableParser
     {
-        public static Executable[] ParseCodeBlock(ParserContext context, TokenStream tokens, bool requireBrackets)
+        public static Executable[] ParseCodeBlock(ParserContext context, TokenStream tokens, TopLevelEntity parent, bool requireBrackets)
         {
             bool hasBrackets = requireBrackets || tokens.IsNext("{");
 
@@ -16,36 +16,36 @@ namespace CSharp2Crayon.Parser
                 tokens.PopExpected("{");
                 while (!tokens.PopIfPresent("}"))
                 {
-                    Executable line = Parse(context, tokens);
+                    Executable line = Parse(context, tokens, parent);
                     lines.Add(line);
                 }
             }
             else
             {
-                lines.Add(Parse(context, tokens));
+                lines.Add(Parse(context, tokens, parent));
             }
             return lines.ToArray();
         }
 
-        public static Executable Parse(ParserContext context, TokenStream tokens)
+        public static Executable Parse(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            return Parse(context, tokens, true);
+            return Parse(context, tokens, parent, true);
         }
 
-        public static Executable Parse(ParserContext context, TokenStream tokens, bool enableSemicolon)
+        public static Executable Parse(ParserContext context, TokenStream tokens, TopLevelEntity parent, bool enableSemicolon)
         {
             switch (tokens.PeekValue())
             {
-                case "for": return ParseForLoop(context, tokens);
-                case "foreach": return ParseForEachLoop(context, tokens);
-                case "if": return ParseIfStatement(context, tokens);
-                case "while": return ParseWhileLoop(context, tokens);
-                case "do": return ParseDoWhileLoop(context, tokens);
-                case "switch": return ParseSwitchStatement(context, tokens);
-                case "throw": return ParseThrowStatement(context, tokens);
-                case "return": return ParseReturnStatement(context, tokens);
-                case "using": return ParseUsingStatement(context, tokens);
-                case "try": return ParseTryStatement(context, tokens);
+                case "for": return ParseForLoop(context, tokens, parent);
+                case "foreach": return ParseForEachLoop(context, tokens, parent);
+                case "if": return ParseIfStatement(context, tokens, parent);
+                case "while": return ParseWhileLoop(context, tokens, parent);
+                case "do": return ParseDoWhileLoop(context, tokens, parent);
+                case "switch": return ParseSwitchStatement(context, tokens, parent);
+                case "throw": return ParseThrowStatement(context, tokens, parent);
+                case "return": return ParseReturnStatement(context, tokens, parent);
+                case "using": return ParseUsingStatement(context, tokens, parent);
+                case "try": return ParseTryStatement(context, tokens, parent);
                 default:
                     break;
             }
@@ -59,7 +59,7 @@ namespace CSharp2Crayon.Parser
                 if (tokens.IsNext(";") || tokens.IsNext("=") || tokens.IsNext(","))
                 {
                     // This is a variable declaration.
-                    Executable varDecl = ParseVariableDeclaration(context, tokens, variableDeclarationType, variableName);
+                    Executable varDecl = ParseVariableDeclaration(context, tokens, variableDeclarationType, variableName, parent);
                     if (enableSemicolon) tokens.PopExpected(";");
                     return varDecl;
                 }
@@ -67,7 +67,7 @@ namespace CSharp2Crayon.Parser
                 tokens.RestoreState(state);
             }
 
-            Expression expr = ExpressionParser.Parse(context, tokens);
+            Expression expr = ExpressionParser.Parse(context, tokens, parent);
 
             Executable exec;
 
@@ -86,12 +86,12 @@ namespace CSharp2Crayon.Parser
                 case "<<=":
                 case ">>=":
                     Token assignmentOpToken = tokens.Pop();
-                    Expression assignmentValue = ExpressionParser.Parse(context, tokens);
-                    exec = new AssignmentStatement(expr.FirstToken, expr, assignmentOpToken, assignmentValue);
+                    Expression assignmentValue = ExpressionParser.Parse(context, tokens, parent);
+                    exec = new AssignmentStatement(expr.FirstToken, expr, assignmentOpToken, assignmentValue, parent);
                     break;
 
                 default:
-                    exec = new ExpressionAsExecutable(expr);
+                    exec = new ExpressionAsExecutable(expr, parent);
                     break;
             }
 
@@ -102,14 +102,14 @@ namespace CSharp2Crayon.Parser
             return exec;
         }
 
-        private static Executable ParseVariableDeclaration(ParserContext context, TokenStream tokens, CSharpType type, Token name)
+        private static Executable ParseVariableDeclaration(ParserContext context, TokenStream tokens, CSharpType type, Token name, TopLevelEntity parent)
         {
             Expression targetValue = null;
             Token assignmentToken = null;
             if (tokens.IsNext("="))
             {
                 assignmentToken = tokens.Pop();
-                targetValue = ExpressionParser.Parse(context, tokens);
+                targetValue = ExpressionParser.Parse(context, tokens, parent);
             }
             else if (tokens.IsNext(","))
             {
@@ -118,43 +118,43 @@ namespace CSharp2Crayon.Parser
                 {
                     variableNames.Add(tokens.PopWord());
                 }
-                return new MultiVariableDeclaration(type.FirstToken, type, variableNames);
+                return new MultiVariableDeclaration(type.FirstToken, type, variableNames, parent);
             }
 
-            return new VariableDeclaration(type.FirstToken, type, name, assignmentToken, targetValue);
+            return new VariableDeclaration(type.FirstToken, type, name, assignmentToken, targetValue, parent);
         }
 
-        private static Executable ParseIfStatement(ParserContext context, TokenStream tokens)
+        private static Executable ParseIfStatement(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token ifToken = tokens.PopExpected("if");
             tokens.PopExpected("(");
-            Expression condition = ExpressionParser.Parse(context, tokens);
+            Expression condition = ExpressionParser.Parse(context, tokens, parent);
             tokens.PopExpected(")");
-            Executable[] ifCode = ParseCodeBlock(context, tokens, false);
+            Executable[] ifCode = ParseCodeBlock(context, tokens, parent, false);
             Executable[] elseCode = null;
             Token elseToken = null;
             if (tokens.IsNext("else"))
             {
                 elseToken = tokens.Pop();
-                elseCode = ParseCodeBlock(context, tokens, false);
+                elseCode = ParseCodeBlock(context, tokens, parent, false);
             }
-            return new IfStatement(ifToken, condition, ifCode, elseToken, elseCode);
+            return new IfStatement(ifToken, condition, ifCode, elseToken, elseCode, parent);
         }
 
-        private static Executable ParseReturnStatement(ParserContext context, TokenStream tokens)
+        private static Executable ParseReturnStatement(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token returnToken = tokens.PopExpected("return");
             if (tokens.PopIfPresent(";"))
             {
-                return new ReturnStatement(returnToken, null);
+                return new ReturnStatement(returnToken, null, parent);
             }
 
-            Expression expression = ExpressionParser.Parse(context, tokens);
+            Expression expression = ExpressionParser.Parse(context, tokens, parent);
             tokens.PopExpected(";");
-            return new ReturnStatement(returnToken, expression);
+            return new ReturnStatement(returnToken, expression, parent);
         }
 
-        private static Executable ParseForLoop(ParserContext context, TokenStream tokens)
+        private static Executable ParseForLoop(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token forToken = tokens.PopExpected("for");
             tokens.PopExpected("(");
@@ -162,12 +162,12 @@ namespace CSharp2Crayon.Parser
             while (!tokens.PopIfPresent(";"))
             {
                 if (initCode.Count > 0) tokens.PopExpected(",");
-                initCode.Add(Parse(context, tokens, false));
+                initCode.Add(Parse(context, tokens, parent, false));
             }
             Expression condition = null;
             if (!tokens.IsNext(";"))
             {
-                condition = ExpressionParser.Parse(context, tokens);
+                condition = ExpressionParser.Parse(context, tokens, parent);
             }
             tokens.PopExpected(";");
             List<Executable> stepCode = new List<Executable>();
@@ -175,53 +175,53 @@ namespace CSharp2Crayon.Parser
             while (!tokens.PopIfPresent(")"))
             {
                 if (stepCode.Count > 0) tokens.PopExpected(",");
-                stepCode.Add(Parse(context, tokens, false));
+                stepCode.Add(Parse(context, tokens, parent, false));
             }
 
-            Executable[] loopBody = ParseCodeBlock(context, tokens, false);
-            return new ForLoop(forToken, initCode, condition, stepCode, loopBody);
+            Executable[] loopBody = ParseCodeBlock(context, tokens, parent, false);
+            return new ForLoop(forToken, initCode, condition, stepCode, loopBody, parent);
         }
 
-        private static Executable ParseWhileLoop(ParserContext context, TokenStream tokens)
+        private static Executable ParseWhileLoop(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token whileToken =  tokens.PopExpected("while");
             tokens.PopExpected("(");
-            Expression condition = ExpressionParser.Parse(context, tokens);
+            Expression condition = ExpressionParser.Parse(context, tokens, parent);
             tokens.PopExpected(")");
-            Executable[] code = ParseCodeBlock(context, tokens, false);
-            return new WhileLoop(whileToken, condition, code);
+            Executable[] code = ParseCodeBlock(context, tokens, parent, false);
+            return new WhileLoop(whileToken, condition, code, parent);
         }
 
-        private static Executable ParseDoWhileLoop(ParserContext context, TokenStream tokens)
+        private static Executable ParseDoWhileLoop(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token doToken = tokens.PopExpected("do");
-            Executable[] code = ParseCodeBlock(context, tokens, true);
+            Executable[] code = ParseCodeBlock(context, tokens, parent, true);
             Token whileToken = tokens.PopExpected("while");
             tokens.PopExpected("(");
-            Expression condition = ExpressionParser.Parse(context, tokens);
+            Expression condition = ExpressionParser.Parse(context, tokens, parent);
             tokens.PopExpected(")");
             tokens.PopExpected(";");
-            return new DoWhileLoop(doToken, code, condition);
+            return new DoWhileLoop(doToken, code, condition, parent);
         }
 
-        private static Executable ParseForEachLoop(ParserContext context, TokenStream tokens)
+        private static Executable ParseForEachLoop(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token foreachToken = tokens.PopExpected("foreach");
             tokens.PopExpected("(");
             CSharpType type = CSharpType.Parse(tokens);
             Token variableToken = tokens.PopWord();
             tokens.PopExpected("in");
-            Expression listExpression = ExpressionParser.Parse(context, tokens);
+            Expression listExpression = ExpressionParser.Parse(context, tokens, parent);
             tokens.PopExpected(")");
-            Executable[] loopBody = ParseCodeBlock(context, tokens, false);
-            return new ForEachLoop(foreachToken, type, variableToken, listExpression, loopBody);
+            Executable[] loopBody = ParseCodeBlock(context, tokens, parent, false);
+            return new ForEachLoop(foreachToken, type, variableToken, listExpression, loopBody, parent);
         }
 
-        private static Executable ParseSwitchStatement(ParserContext context, TokenStream tokens)
+        private static Executable ParseSwitchStatement(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token switchToken = tokens.PopExpected("switch");
             tokens.PopExpected("(");
-            Expression condition = ExpressionParser.Parse(context, tokens);
+            Expression condition = ExpressionParser.Parse(context, tokens, parent);
             tokens.PopExpected(")");
             tokens.PopExpected("{");
             List<Token> caseTokens = new List<Token>();
@@ -234,7 +234,7 @@ namespace CSharp2Crayon.Parser
                     if (tokens.IsNext("case"))
                     {
                         caseTokens.Add(tokens.PopExpected("case"));
-                        cases.Add(ExpressionParser.Parse(context, tokens));
+                        cases.Add(ExpressionParser.Parse(context, tokens, parent));
                         tokens.PopExpected(":");
                     }
                     else
@@ -250,26 +250,26 @@ namespace CSharp2Crayon.Parser
                 {
                     // these are the 3 things that can appear in a switch statement. If it's not one of these,
                     // then it's a line of code that belongs to the previous case/default.
-                    codeForCurrentBlock.Add(Parse(context, tokens));
+                    codeForCurrentBlock.Add(Parse(context, tokens, parent));
                 }
                 codeForCase.Add(codeForCurrentBlock == null ? null : codeForCurrentBlock.ToArray());
             }
 
-            return new SwitchStatement(switchToken, condition, caseTokens, cases, codeForCase);
+            return new SwitchStatement(switchToken, condition, caseTokens, cases, codeForCase, parent);
         }
 
-        private static Executable ParseThrowStatement(ParserContext context, TokenStream tokens)
+        private static Executable ParseThrowStatement(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token throwToken = tokens.PopExpected("throw");
-            Expression expr = ExpressionParser.Parse(context, tokens);
+            Expression expr = ExpressionParser.Parse(context, tokens, parent);
             tokens.PopExpected(";");
-            return new ThrowStatement(throwToken, expr);
+            return new ThrowStatement(throwToken, expr, parent);
         }
 
-        private static Executable ParseTryStatement(ParserContext context, TokenStream tokens)
+        private static Executable ParseTryStatement(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token tryToken = tokens.PopExpected("try");
-            Executable[] tryCode = ExecutableParser.ParseCodeBlock(context, tokens, true);
+            Executable[] tryCode = ExecutableParser.ParseCodeBlock(context, tokens, parent, true);
 
             List<Token> catchTokens = new List<Token>();
             List<CSharpType> catchBlockTypes = new List<CSharpType>();
@@ -292,13 +292,13 @@ namespace CSharp2Crayon.Parser
                 {
                     catchBlockVariables.Add(null);
                 }
-                catchBlockCode.Add(ParseCodeBlock(context, tokens, true));
+                catchBlockCode.Add(ParseCodeBlock(context, tokens, parent, true));
             }
 
             if (tokens.IsNext("finally"))
             {
                 finallyToken = tokens.Pop();
-                finallyCode = ParseCodeBlock(context, tokens, true);
+                finallyCode = ParseCodeBlock(context, tokens, parent, true);
             }
 
             return new TryStatement(
@@ -309,10 +309,11 @@ namespace CSharp2Crayon.Parser
                 catchBlockVariables,
                 catchBlockCode,
                 finallyToken,
-                finallyCode);
+                finallyCode,
+                parent);
         }
 
-        private static Executable ParseUsingStatement(ParserContext context, TokenStream tokens)
+        private static Executable ParseUsingStatement(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Token usingToken = tokens.PopExpected("using");
             tokens.PopExpected("(");
@@ -325,10 +326,10 @@ namespace CSharp2Crayon.Parser
                 variable = tokens.PopWord();
                 equalsToken = tokens.PopExpected("=");
             }
-            Expression expression = ExpressionParser.Parse(context, tokens);
+            Expression expression = ExpressionParser.Parse(context, tokens, parent);
             tokens.PopExpected(")");
-            Executable[] code = ExecutableParser.ParseCodeBlock(context, tokens, false);
-            return new UsingStatement(usingToken, type, variable, expression, code);
+            Executable[] code = ExecutableParser.ParseCodeBlock(context, tokens, parent, false);
+            return new UsingStatement(usingToken, type, variable, expression, code, parent);
         }
     }
 }

@@ -14,8 +14,9 @@ namespace CSharp2Crayon.Parser.Nodes
             Expression condition,
             IList<Token> caseTokens,
             IList<Expression> caseConstants,
-            IList<Executable[]> codeForCases)
-            : base(firstToken)
+            IList<Executable[]> codeForCases,
+            TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             List<SwitchStatementChunk> chunks = new List<SwitchStatementChunk>();
             List<Token> caseTokensForCurrentChunk = new List<Token>();

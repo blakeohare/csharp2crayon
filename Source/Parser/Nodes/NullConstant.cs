@@ -2,14 +2,13 @@
 {
     public class NullConstant : Expression
     {
-        public NullConstant(Token firstToken) : base(firstToken)
-        {
-
-        }
+        public NullConstant(Token firstToken, TopLevelEntity parent)
+            : base(firstToken, parent)
+        { }
 
         public override Expression ResolveTypes(ParserContext context)
         {
-            this.Type = ResolvedType.CreateNull();
+            this.ResolvedType = ResolvedType.CreateNull();
             return this;
         }
     }

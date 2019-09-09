@@ -4,7 +4,8 @@
     {
         public Token Name { get; private set; }
 
-        public Variable(Token name) : base(name)
+        public Variable(Token name, TopLevelEntity parent)
+            : base(name, parent)
         {
             this.Name = name;
         }

@@ -8,7 +8,7 @@ namespace CSharp2Crayon.Parser.Nodes
         public ResolvedType ResolvedType { get; private set; }
 
         public Token Name { get; private set; }
-        public Expression InitialValue { get; private set; }
+        public Expression InitialValue { get; internal set; }
 
         public override string NameValue { get { return this.Name.Value; } }
 

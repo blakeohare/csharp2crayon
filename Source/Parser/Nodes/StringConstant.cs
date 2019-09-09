@@ -4,14 +4,15 @@
     {
         public string Value { get; private set; }
 
-        public StringConstant(Token firstToken, string actualValue) : base(firstToken)
+        public StringConstant(Token firstToken, string actualValue, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Value = Value;
         }
 
         public override Expression ResolveTypes(ParserContext context)
         {
-            this.Type = ResolvedType.CreatePrimitive("string", this.FirstToken);
+            this.ResolvedType = ResolvedType.CreatePrimitive("string", this.FirstToken);
             return this;
         }
     }

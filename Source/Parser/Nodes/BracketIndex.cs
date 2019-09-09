@@ -6,8 +6,8 @@
         public Token OpenBracket { get; private set; }
         public Expression Index { get; private set; }
 
-        public BracketIndex(Expression root, Token openBracket, Expression index)
-            : base(root.FirstToken)
+        public BracketIndex(Expression root, Token openBracket, Expression index, TopLevelEntity parent)
+            : base(root.FirstToken, parent)
         {
             this.Root = root;
             this.OpenBracket = openBracket;

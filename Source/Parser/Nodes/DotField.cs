@@ -7,8 +7,8 @@
         public Token FieldName { get; private set; }
         public CSharpType[] InlineTypeSpecification { get; set; } // e.g. .Cast<string>()
 
-        public DotField(Token firstToken, Expression root, Token dotToken, Token fieldName)
-            : base(firstToken)
+        public DotField(Token firstToken, Expression root, Token dotToken, Token fieldName, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Root = root;
             this.DotToken = dotToken;

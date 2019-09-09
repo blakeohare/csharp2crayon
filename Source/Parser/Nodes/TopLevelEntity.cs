@@ -107,7 +107,7 @@ namespace CSharp2Crayon.Parser.Nodes
             return this.namespaceSearchPrefixes;
         }
 
-        protected ResolvedType DoTypeLookup(CSharpType type, ParserContext context)
+        internal ResolvedType DoTypeLookup(CSharpType type, ParserContext context)
         {
             ResolvedType rType = ResolvedType.Create(type, this.GetAllNamespaceSearchPrefixes(), context);
             if (rType == null) throw new ParserException(type.FirstToken, "Could not resolve parent class or interface: " + type.ToString());

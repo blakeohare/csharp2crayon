@@ -6,7 +6,7 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         public Expression Expression { get; private set; }
 
-        public ExpressionAsExecutable(Expression expr) : base(expr.FirstToken)
+        public ExpressionAsExecutable(Expression expr, TopLevelEntity parent) : base(expr.FirstToken, parent)
         {
             this.Expression = expr;
         }

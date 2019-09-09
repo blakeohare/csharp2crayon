@@ -7,8 +7,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Executable[] Code { get; private set; }
         public Expression Condition { get; private set; }
 
-        public DoWhileLoop(Token doToken, Executable[] code, Expression condition)
-            : base(doToken)
+        public DoWhileLoop(Token doToken, Executable[] code, Expression condition, TopLevelEntity parent)
+            : base(doToken, parent)
         {
             this.Code = code;
             this.Condition = condition;

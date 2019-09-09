@@ -17,8 +17,9 @@ namespace CSharp2Crayon.Parser.Nodes
             IList<Token> catchBlockVariables,
             IList<Executable[]> catchBlockCode,
             Token finallyToken,
-            Executable[] finallyCode)
-            : base(tryToken)
+            Executable[] finallyCode,
+            TopLevelEntity parent)
+            : base(tryToken, parent)
         {
 
             this.TryCode = tryCode;

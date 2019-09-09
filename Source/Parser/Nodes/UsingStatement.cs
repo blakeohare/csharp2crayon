@@ -10,8 +10,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Expression Expression { get; private set; }
         public Executable[] Code { get; private set; }
 
-        public UsingStatement(Token firstToken, CSharpType variableType, Token variableName, Expression expression, IList<Executable> code)
-            : base(firstToken)
+        public UsingStatement(Token firstToken, CSharpType variableType, Token variableName, Expression expression, IList<Executable> code, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Type = variableType;
             this.VariableName = variableName;

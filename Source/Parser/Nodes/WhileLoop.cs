@@ -6,8 +6,8 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         public Expression Condition { get; private set; }
         public Executable[] Code { get; private set; }
-        public WhileLoop(Token whileToken, Expression condition, Executable[] code)
-            : base(whileToken)
+        public WhileLoop(Token whileToken, Expression condition, Executable[] code, TopLevelEntity parent)
+            : base(whileToken, parent)
         {
             this.Condition = condition;
             this.Code = code;

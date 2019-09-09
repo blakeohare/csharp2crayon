@@ -7,8 +7,8 @@
         public bool IsIncrement { get; private set; } // as opposed to decrement
         public Token IncrementToken { get; private set; }
 
-        public InlineIncrement(Token firstToken, Token incrementToken, bool isPrefix, Expression root)
-            : base(firstToken)
+        public InlineIncrement(Token firstToken, Token incrementToken, bool isPrefix, Expression root, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Root = root;
             this.IncrementToken = incrementToken;

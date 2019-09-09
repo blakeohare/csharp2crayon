@@ -4,7 +4,8 @@
     {
         public Expression Root { get; private set; }
 
-        public BooleanNot(Token firstToken, Expression root) : base(firstToken)
+        public BooleanNot(Token firstToken, Expression root, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Root = root;
         }

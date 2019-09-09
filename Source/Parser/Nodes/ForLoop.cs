@@ -10,8 +10,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Executable[] StepCode { get; private set; }
         public Executable[] Code { get; private set; }
 
-        public ForLoop(Token forToken, IList<Executable> initCode, Expression condition, IList<Executable> stepCode, IList<Executable> loopBody)
-            : base(forToken)
+        public ForLoop(Token forToken, IList<Executable> initCode, Expression condition, IList<Executable> stepCode, IList<Executable> loopBody, TopLevelEntity parent)
+            : base(forToken, parent)
         {
             this.InitCode = initCode.ToArray();
             this.Condition = condition;

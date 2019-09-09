@@ -6,8 +6,8 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         public Expression Value { get; private set; }
 
-        public ReturnStatement(Token firstToken, Expression nullableExpression)
-            : base(firstToken)
+        public ReturnStatement(Token firstToken, Expression nullableExpression, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Value = nullableExpression;
         }

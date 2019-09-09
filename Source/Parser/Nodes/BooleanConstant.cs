@@ -4,7 +4,8 @@
     {
         public bool Value { get; private set; }
 
-        public BooleanConstant(Token firstToken, bool value) : base(firstToken)
+        public BooleanConstant(Token firstToken, bool value, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Value = value;
         }

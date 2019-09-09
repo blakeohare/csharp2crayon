@@ -4,7 +4,8 @@
     {
         public Expression Root { get; private set; }
 
-        public NegativeSign(Token firstToken, Expression root) : base(firstToken)
+        public NegativeSign(Token firstToken, Expression root, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Root = root;
         }

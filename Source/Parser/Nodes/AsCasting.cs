@@ -6,8 +6,8 @@
         public Token AsToken { get; private set; }
         public CSharpType Type { get; private set; }
 
-        public AsCasting(Token firstToken, Expression expression, Token asToken, CSharpType type)
-            : base(firstToken)
+        public AsCasting(Token firstToken, Expression expression, Token asToken, CSharpType type, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.Expression = expression;
             this.AsToken = asToken;

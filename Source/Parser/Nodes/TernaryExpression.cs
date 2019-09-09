@@ -11,8 +11,9 @@
             Expression condition,
             Token ternaryToken,
             Expression trueExpression,
-            Expression falseExpression)
-            : base(condition.FirstToken)
+            Expression falseExpression,
+            TopLevelEntity parent)
+            : base(condition.FirstToken, parent)
         {
             this.Condition = condition;
             this.TernaryToken = ternaryToken;

@@ -15,8 +15,9 @@ namespace CSharp2Crayon.Parser.Nodes
             CSharpType variableType,
             Token variableName,
             Token assignmentToken,
-            Expression value)
-            : base(firstToken)
+            Expression value,
+            TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.VariableName = variableName;
             this.Type = variableType;
@@ -26,7 +27,17 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override IList<Executable> ResolveTypes(ParserContext context)
         {
-            throw new System.NotImplementedException();
+            this.ResolvedType = this.DoTypeLookup(this.Type, context);
+            if (this.InitialValue != null)
+            {
+                this.InitialValue = this.InitialValue.ResolveTypes(context);
+            }
+            else
+            {
+                // default value
+                throw new System.NotImplementedException();
+            }
+            return Listify(this);
         }
     }
 }

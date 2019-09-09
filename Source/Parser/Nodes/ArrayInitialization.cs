@@ -11,8 +11,13 @@ namespace CSharp2Crayon.Parser.Nodes
         public Expression ArrayLengthExpression { get; private set; }
         public Expression[] ArrayItems { get; private set; }
 
-        public ArrayInitialization(Token firstToken, CSharpType itemType, Expression arrayLength, IList<Expression> arrayElements)
-            : base(firstToken)
+        public ArrayInitialization(
+            Token firstToken,
+            CSharpType itemType,
+            Expression arrayLength,
+            IList<Expression> arrayElements,
+            TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.ItemType = itemType;
             this.ArrayLengthExpression = arrayLength;

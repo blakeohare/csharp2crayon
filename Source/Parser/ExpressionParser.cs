@@ -6,28 +6,28 @@ namespace CSharp2Crayon.Parser
 {
     public static class ExpressionParser
     {
-        public static Expression Parse(ParserContext context, TokenStream tokens)
+        public static Expression Parse(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            return ParseTernary(context, tokens);
+            return ParseTernary(context, tokens, parent);
         }
 
-        private static Expression ParseTernary(ParserContext context, TokenStream tokens)
+        private static Expression ParseTernary(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseNullCoalescer(context, tokens);
+            Expression root = ParseNullCoalescer(context, tokens, parent);
             if (tokens.IsNext("?"))
             {
                 Token ternaryToken = tokens.Pop();
-                Expression trueExpression = ParseTernary(context, tokens);
+                Expression trueExpression = ParseTernary(context, tokens, parent);
                 tokens.PopExpected(":");
-                Expression falseExpression = ParseTernary(context, tokens);
-                return new TernaryExpression(root, ternaryToken, trueExpression, falseExpression);
+                Expression falseExpression = ParseTernary(context, tokens, parent);
+                return new TernaryExpression(root, ternaryToken, trueExpression, falseExpression, parent);
             }
             return root;
         }
 
-        private static Expression ParseNullCoalescer(ParserContext context, TokenStream tokens)
+        private static Expression ParseNullCoalescer(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseBooleanCombination(context, tokens);
+            Expression root = ParseBooleanCombination(context, tokens, parent);
             if (tokens.IsNext("??"))
             {
                 List<Expression> expressions = new List<Expression>() { root };
@@ -35,16 +35,16 @@ namespace CSharp2Crayon.Parser
                 while (tokens.IsNext("??"))
                 {
                     ops.Add(tokens.Pop());
-                    expressions.Add(ParseBooleanCombination(context, tokens));
+                    expressions.Add(ParseBooleanCombination(context, tokens, parent));
                 }
-                return new OpChain(expressions, ops);
+                return new OpChain(expressions, ops, parent);
             }
             return root;
         }
 
-        private static Expression ParseBooleanCombination(ParserContext context, TokenStream tokens)
+        private static Expression ParseBooleanCombination(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseBitwiseOps(context, tokens);
+            Expression root = ParseBitwiseOps(context, tokens, parent);
             string next = tokens.PeekValue();
             if (next == "&&" || next == "||")
             {
@@ -53,16 +53,16 @@ namespace CSharp2Crayon.Parser
                 while (tokens.IsNext("&&") || tokens.IsNext("||"))
                 {
                     ops.Add(tokens.Pop());
-                    expressions.Add(ParseBitwiseOps(context, tokens));
+                    expressions.Add(ParseBitwiseOps(context, tokens, parent));
                 }
-                return new OpChain(expressions, ops);
+                return new OpChain(expressions, ops, parent);
             }
             return root;
         }
 
-        private static Expression ParseBitwiseOps(ParserContext context, TokenStream tokens)
+        private static Expression ParseBitwiseOps(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseEqualityComparison(context, tokens);
+            Expression root = ParseEqualityComparison(context, tokens, parent);
             string next = tokens.PeekValue();
             if (next == "|" || next == "&" || next == "^")
             {
@@ -71,35 +71,35 @@ namespace CSharp2Crayon.Parser
                 while (tokens.IsNext("|") || tokens.IsNext("&") || tokens.IsNext("^"))
                 {
                     ops.Add(tokens.Pop());
-                    expressions.Add(ParseEqualityComparison(context, tokens));
+                    expressions.Add(ParseEqualityComparison(context, tokens, parent));
                 }
-                return new OpChain(expressions, ops);
+                return new OpChain(expressions, ops, parent);
             }
             return root;
         }
 
-        private static Expression ParseEqualityComparison(ParserContext context, TokenStream tokens)
+        private static Expression ParseEqualityComparison(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseInequalityComparison(context, tokens);
+            Expression root = ParseInequalityComparison(context, tokens, parent);
             string next = tokens.PeekValue();
             if (next == "==" || next == "!=")
             {
                 List<Token> ops = new List<Token>() { tokens.Pop() };
-                List<Expression> expressions = new List<Expression>() { root, ParseInequalityComparison(context, tokens) };
-                return new OpChain(expressions, ops);
+                List<Expression> expressions = new List<Expression>() { root, ParseInequalityComparison(context, tokens, parent) };
+                return new OpChain(expressions, ops, parent);
             }
             return root;
         }
 
-        private static Expression ParseInequalityComparison(ParserContext context, TokenStream tokens)
+        private static Expression ParseInequalityComparison(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseBitShift(context, tokens);
+            Expression root = ParseBitShift(context, tokens, parent);
             string next = tokens.PeekValue();
             if (next == "<" || next == "<=" || next == ">" || next == ">=")
             {
                 List<Token> ops = new List<Token>() { tokens.Pop() };
-                List<Expression> expressions = new List<Expression>() { root, ParseBitShift(context, tokens) };
-                return new OpChain(expressions, ops);
+                List<Expression> expressions = new List<Expression>() { root, ParseBitShift(context, tokens, parent) };
+                return new OpChain(expressions, ops, parent);
             }
             if (tokens.IsNext("is") || tokens.IsNext("as"))
             {
@@ -107,19 +107,19 @@ namespace CSharp2Crayon.Parser
                 CSharpType type = CSharpType.ParseWithoutNullable(tokens);
                 if (isToken.Value == "is")
                 {
-                    return new IsComparison(root.FirstToken, root, isToken, type);
+                    return new IsComparison(root.FirstToken, root, isToken, type, parent);
                 }
                 else
                 {
-                    return new AsCasting(root.FirstToken, root, isToken, type);
+                    return new AsCasting(root.FirstToken, root, isToken, type, parent);
                 }
             }
             return root;
         }
 
-        private static Expression ParseBitShift(ParserContext context, TokenStream tokens)
+        private static Expression ParseBitShift(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseAddition(context, tokens);
+            Expression root = ParseAddition(context, tokens, parent);
             string next = tokens.PeekValue();
             if (next == "<<" || next == ">>")
             {
@@ -128,16 +128,16 @@ namespace CSharp2Crayon.Parser
                 while (tokens.IsNext("<<") || tokens.IsNext(">>"))
                 {
                     ops.Add(tokens.Pop());
-                    expressions.Add(ParseAddition(context, tokens));
+                    expressions.Add(ParseAddition(context, tokens, parent));
                 }
-                return new OpChain(expressions, ops);
+                return new OpChain(expressions, ops, parent);
             }
             return root;
         }
 
-        private static Expression ParseAddition(ParserContext context, TokenStream tokens)
+        private static Expression ParseAddition(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseMultiplication(context, tokens);
+            Expression root = ParseMultiplication(context, tokens, parent);
             string next = tokens.PeekValue();
             if (next == "+" || next == "-")
             {
@@ -146,16 +146,16 @@ namespace CSharp2Crayon.Parser
                 while (tokens.IsNext("+") || tokens.IsNext("-"))
                 {
                     ops.Add(tokens.Pop());
-                    expressions.Add(ParseMultiplication(context, tokens));
+                    expressions.Add(ParseMultiplication(context, tokens, parent));
                 }
-                return new OpChain(expressions, ops);
+                return new OpChain(expressions, ops, parent);
             }
             return root;
         }
 
-        private static Expression ParseMultiplication(ParserContext context, TokenStream tokens)
+        private static Expression ParseMultiplication(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            Expression root = ParseUnary(context, tokens);
+            Expression root = ParseUnary(context, tokens, parent);
             string next = tokens.PeekValue();
             if (next == "*" || next == "/" || next == "%")
             {
@@ -164,33 +164,33 @@ namespace CSharp2Crayon.Parser
                 while (tokens.IsNext("*") || tokens.IsNext("/") || tokens.IsNext("%"))
                 {
                     ops.Add(tokens.Pop());
-                    expressions.Add(ParseUnary(context, tokens));
+                    expressions.Add(ParseUnary(context, tokens, parent));
                 }
-                return new OpChain(expressions, ops);
+                return new OpChain(expressions, ops, parent);
             }
             return root;
         }
 
-        private static Expression ParseUnary(ParserContext context, TokenStream tokens)
+        private static Expression ParseUnary(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             string next = tokens.PeekValue();
             if (next == "!" || next == "-" || next == "--" || next == "++")
             {
                 Token unaryToken = tokens.Pop();
-                Expression root = ParseAtomWithSuffix(context, tokens);
+                Expression root = ParseAtomWithSuffix(context, tokens, parent);
                 switch (next)
                 {
-                    case "!": return new BooleanNot(unaryToken, root);
-                    case "-": return new NegativeSign(unaryToken, root);
+                    case "!": return new BooleanNot(unaryToken, root, parent);
+                    case "-": return new NegativeSign(unaryToken, root, parent);
 
                     case "++":
                     case "--":
-                        return new InlineIncrement(unaryToken, unaryToken, true, root);
+                        return new InlineIncrement(unaryToken, unaryToken, true, root, parent);
                     default: throw new NotImplementedException();
                 }
             }
 
-            return ParseAtomWithSuffix(context, tokens);
+            return ParseAtomWithSuffix(context, tokens, parent);
         }
 
         private static CSharpType[] MaybeParseOutOneOfThoseInlineTypeSpecificationsForFunctionInvocations(TokenStream tokens)
@@ -312,7 +312,7 @@ namespace CSharp2Crayon.Parser
             return ConstructorSuffixData.SEQUENTIAL_ITEMS;
         }
 
-        private static Expression ParseAtomWithSuffix(ParserContext context, TokenStream tokens)
+        private static Expression ParseAtomWithSuffix(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             Expression root;
             if (tokens.IsNext("("))
@@ -324,8 +324,8 @@ namespace CSharp2Crayon.Parser
                     case ParenthesisSituation.CAST:
                         CSharpType castType = CSharpType.Parse(tokens);
                         tokens.PopExpected(")");
-                        Expression castValue = ParseAtomWithSuffix(context, tokens);
-                        return new CastExpression(openParen, castType, castValue);
+                        Expression castValue = ParseAtomWithSuffix(context, tokens, parent);
+                        return new CastExpression(openParen, castType, castValue, parent);
 
                     case ParenthesisSituation.LAMBDA_ARG:
                         List<Token> lambdaArgs = new List<Token>() { tokens.PopWord() };
@@ -339,19 +339,19 @@ namespace CSharp2Crayon.Parser
                         Executable[] lambdaBody;
                         if (tokens.IsNext("{"))
                         {
-                            lambdaBody = ExecutableParser.ParseCodeBlock(context, tokens, true);
+                            lambdaBody = ExecutableParser.ParseCodeBlock(context, tokens, parent, true);
                         }
                         else
                         {
-                            Expression expr = Parse(context, tokens);
+                            Expression expr = Parse(context, tokens, parent);
                             lambdaBody = new Executable[] {
-                                new ReturnStatement(expr.FirstToken, expr)
+                                new ReturnStatement(expr.FirstToken, expr, parent)
                             };
                         }
-                        return new Lambda(openParen, lambdaArgs, arrowToken, lambdaBody);
+                        return new Lambda(openParen, lambdaArgs, arrowToken, lambdaBody, parent);
 
                     case ParenthesisSituation.WRAPPED_EXPRESSION:
-                        root = Parse(context, tokens);
+                        root = Parse(context, tokens, parent);
                         tokens.PopExpected(")");
                         break;
 
@@ -361,7 +361,7 @@ namespace CSharp2Crayon.Parser
             }
             else
             {
-                root = ParseAtom(context, tokens);
+                root = ParseAtom(context, tokens, parent);
             }
             bool anythingInteresting = true;
             string next = tokens.PeekValue();
@@ -372,13 +372,13 @@ namespace CSharp2Crayon.Parser
                     case ".":
                         Token dotToken = tokens.Pop();
                         Token fieldName = tokens.PopWord();
-                        root = new DotField(root.FirstToken, root, dotToken, fieldName);
+                        root = new DotField(root.FirstToken, root, dotToken, fieldName, parent);
                         break;
                     case "[":
                         Token openBracket = tokens.Pop();
-                        Expression index = Parse(context, tokens);
+                        Expression index = Parse(context, tokens, parent);
                         tokens.PopExpected("]");
-                        root = new BracketIndex(root, openBracket, index);
+                        root = new BracketIndex(root, openBracket, index, parent);
                         break;
                     case "<":
                         if (root is DotField)
@@ -413,9 +413,9 @@ namespace CSharp2Crayon.Parser
                             {
                                 outTokens.Add(null);
                             }
-                            args.Add(Parse(context, tokens));
+                            args.Add(Parse(context, tokens, parent));
                         }
-                        root = new FunctionInvocation(root.FirstToken, root, openParen, args, outTokens);
+                        root = new FunctionInvocation(root.FirstToken, root, openParen, args, outTokens, parent);
                         break;
                     case "{": // e.g. new List<int>() { 1, 2, 3 }. This only follows a constructor.
                         FunctionInvocation fi = root as FunctionInvocation;
@@ -437,20 +437,20 @@ namespace CSharp2Crayon.Parser
                                 {
                                     case ConstructorSuffixData.KVP_ENTRIES:
                                         tokens.PopExpected("{");
-                                        kvpKeys.Add(Parse(context, tokens));
+                                        kvpKeys.Add(Parse(context, tokens, parent));
                                         tokens.PopExpected(",");
-                                        values.Add(Parse(context, tokens));
+                                        values.Add(Parse(context, tokens, parent));
                                         tokens.PopExpected("}");
                                         break;
 
                                     case ConstructorSuffixData.PROPERTIES:
                                         propertyNames.Add(tokens.PopWord());
                                         tokens.PopExpected("=");
-                                        values.Add(Parse(context, tokens));
+                                        values.Add(Parse(context, tokens, parent));
                                         break;
 
                                     case ConstructorSuffixData.SEQUENTIAL_ITEMS:
-                                        values.Add(Parse(context, tokens));
+                                        values.Add(Parse(context, tokens, parent));
                                         break;
                                 }
                                 nextAllowed = tokens.PopIfPresent(",");
@@ -475,13 +475,13 @@ namespace CSharp2Crayon.Parser
             if (next == "++" || next == "--")
             {
                 Token incrementToken = tokens.Pop();
-                root = new InlineIncrement(root.FirstToken, incrementToken, false, root);
+                root = new InlineIncrement(root.FirstToken, incrementToken, false, root, parent);
             }
 
             return root;
         }
 
-        private static Expression ParseAtom(ParserContext context, TokenStream tokens)
+        private static Expression ParseAtom(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             string next = tokens.PeekValue();
             switch (next)
@@ -489,11 +489,11 @@ namespace CSharp2Crayon.Parser
                 case "true":
                 case "false":
                     Token booleanToken = tokens.Pop();
-                    return new BooleanConstant(booleanToken, booleanToken.Value == "true");
+                    return new BooleanConstant(booleanToken, booleanToken.Value == "true", parent);
 
                 case "null":
                     Token nullToken = tokens.Pop();
-                    return new NullConstant(nullToken);
+                    return new NullConstant(nullToken, parent);
 
                 case "new":
                     Token newToken = tokens.Pop();
@@ -513,25 +513,25 @@ namespace CSharp2Crayon.Parser
                             while (!tokens.PopIfPresent("}"))
                             {
                                 if (!nextAllowed) tokens.PopExpected("}");
-                                arrayItems.Add(ExpressionParser.Parse(context, tokens));
+                                arrayItems.Add(ExpressionParser.Parse(context, tokens, parent));
                                 nextAllowed = tokens.PopIfPresent(",");
                             }
-                            return new ArrayInitialization(newToken, className.Generics[0], null, arrayItems);
+                            return new ArrayInitialization(newToken, className.Generics[0], null, arrayItems, parent);
                         }
 
                         if (tokens.IsNext("["))
                         {
                             // a new array with specified length
                             tokens.PopExpected("[");
-                            Expression arrayLength = ExpressionParser.Parse(context, tokens);
+                            Expression arrayLength = ExpressionParser.Parse(context, tokens, parent);
                             tokens.PopExpected("]");
-                            return new ArrayInitialization(newToken, className, arrayLength, null);
+                            return new ArrayInitialization(newToken, className, arrayLength, null, parent);
                         }
 
                         // if this isn't an array construction, then give a reasonable error message...
                         tokens.PopExpected("(");
                     }
-                    return new ConstructorInvocationFragment(newToken, className);
+                    return new ConstructorInvocationFragment(newToken, className, parent);
 
                 case "@":
                     // raw string
@@ -542,7 +542,7 @@ namespace CSharp2Crayon.Parser
                     {
                         throw new ParserException(stringValue, "Expected a string value");
                     }
-                    return new StringConstant(rawStringAt, stringValueActual.Substring(1, stringValueActual.Length - 2));
+                    return new StringConstant(rawStringAt, stringValueActual.Substring(1, stringValueActual.Length - 2), parent);
 
                 default: break;
             }
@@ -552,7 +552,7 @@ namespace CSharp2Crayon.Parser
 
             if (c == '"' || c == '\'')
             {
-                return new StringConstant(token, StringUtil.ConvertStringTokenToValue(token));
+                return new StringConstant(token, StringUtil.ConvertStringTokenToValue(token), parent);
             }
 
             if (c == '0' && next.Length > 2 && next[1] == 'x')
@@ -580,7 +580,7 @@ namespace CSharp2Crayon.Parser
                         throw new ParserException(token, "Invalid hexidecimal value: '" + hex + "'");
                     }
                 }
-                return new IntegerConstant(token, parsedValue);
+                return new IntegerConstant(token, parsedValue, parent);
             }
 
             if (c == '.' && next.Length > 1)
@@ -590,7 +590,7 @@ namespace CSharp2Crayon.Parser
                 {
                     throw new ParserException(token, "Invalid double constant: '" + next + "'");
                 }
-                return new DoubleConstant(token, value);
+                return new DoubleConstant(token, value, parent);
             }
 
             if (c >= '0' && c <= '9')
@@ -606,7 +606,7 @@ namespace CSharp2Crayon.Parser
                     {
                         throw new ParserException(token, "Invalid number: '" + next + "'");
                     }
-                    return new DoubleConstant(token, floatValue);
+                    return new DoubleConstant(token, floatValue, parent);
                 }
                 else
                 {
@@ -621,7 +621,7 @@ namespace CSharp2Crayon.Parser
                         throw new ParserException(token, "Invalid number: '" + next + "'");
                     }
 
-                    return new IntegerConstant(token, intValue);
+                    return new IntegerConstant(token, intValue, parent);
                 }
             }
 
@@ -636,18 +636,18 @@ namespace CSharp2Crayon.Parser
                     Executable[] lambdaBody;
                     if (tokens.IsNext("{"))
                     {
-                        lambdaBody = ExecutableParser.ParseCodeBlock(context, tokens, true);
+                        lambdaBody = ExecutableParser.ParseCodeBlock(context, tokens, parent, true);
                     }
                     else
                     {
-                        Expression lambdaBodyExpr = Parse(context, tokens);
+                        Expression lambdaBodyExpr = Parse(context, tokens, parent);
                         lambdaBody = new Executable[] {
-                            new ReturnStatement(lambdaBodyExpr.FirstToken, lambdaBodyExpr),
+                            new ReturnStatement(lambdaBodyExpr.FirstToken, lambdaBodyExpr, parent),
                         };
                     }
-                    return new Lambda(token, args, arrowToken, lambdaBody);
+                    return new Lambda(token, args, arrowToken, lambdaBody, parent);
                 }
-                return new Variable(token);
+                return new Variable(token, parent);
             }
 
             throw new ParserException(token, "Unexpected token: '" + token.Value + "'");

@@ -10,8 +10,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Token[] ArgModifiers { get; private set; }
         public ResolvedType[] ResolvedArgTypes { get; private set; }
 
-        public Token BaseConstructorInvocation { get; private set; }
-        public Expression[] BaseConstructorArgs { get; private set; }
+        public Token BaseConstructorInvocation { get; internal set; }
+        public Expression[] BaseConstructorArgs { get; internal set; }
         public Executable[] Code { get; internal set; }
 
         public override string NameValue { get { return "ctor"; } }
@@ -22,8 +22,6 @@ namespace CSharp2Crayon.Parser.Nodes
             IList<CSharpType> argTypes,
             IList<Token> argNames,
             IList<Token> argModifiers,
-            Token nullableBaseConstructorInvocation,
-            IList<Expression> nullableBaseConstructorArguments,
             TopLevelEntity parent)
             : base(firstToken, parent)
         {
@@ -31,8 +29,8 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ArgTypes = argTypes.ToArray();
             this.ArgNames = argNames.ToArray();
             this.ArgModifiers = argModifiers.ToArray();
-            this.BaseConstructorInvocation = nullableBaseConstructorInvocation;
-            this.BaseConstructorArgs = nullableBaseConstructorArguments == null ? null : nullableBaseConstructorArguments.ToArray();
+            this.BaseConstructorInvocation = null;
+            this.BaseConstructorArgs = null;
         }
 
         public override void ResolveTypesForSignatures(ParserContext context)

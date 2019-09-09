@@ -9,8 +9,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Token VariableToken { get; private set; }
         public Expression ListExpression { get; private set; }
         public Executable[] Code { get; private set; }
-        public ForEachLoop(Token foreachToken, CSharpType type, Token variableToken, Expression listExpression, IList<Executable> loopBody)
-            : base(foreachToken)
+        public ForEachLoop(Token foreachToken, CSharpType type, Token variableToken, Expression listExpression, IList<Executable> loopBody, TopLevelEntity parent)
+            : base(foreachToken, parent)
         {
             this.VariableType = type;
             this.VariableToken = variableToken;

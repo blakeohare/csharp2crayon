@@ -9,8 +9,8 @@
         public Expression[] InitialDataKeys { get; internal set; }
         public Expression[] InitialDataValues { get; internal set; }
 
-        public ConstructorInvocationFragment(Token newKeywordToken, CSharpType classNameAsAType)
-            : base(newKeywordToken)
+        public ConstructorInvocationFragment(Token newKeywordToken, CSharpType classNameAsAType, TopLevelEntity parent)
+            : base(newKeywordToken, parent)
         {
             this.ClassName = classNameAsAType;
         }
