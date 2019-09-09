@@ -20,7 +20,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.FieldValues = fieldValues.ToArray();
         }
 
-        public override void ResolveTypes(ParserContext context)
+        public override void ResolveTypesForSignatures(ParserContext context)
         {
             
         }

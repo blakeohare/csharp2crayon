@@ -54,11 +54,11 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ParentClasses = this.RawParentClassInfoTokens.Select(t => this.DoTypeLookup(t, context)).ToArray();
         }
 
-        public override void ResolveTypes(ParserContext context)
+        public override void ResolveTypesForSignatures(ParserContext context)
         {
             foreach (TopLevelEntity entity in this.Members)
             {
-                entity.ResolveTypes(context);
+                entity.ResolveTypesForSignatures(context);
             }
         }
     }

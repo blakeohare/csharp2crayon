@@ -25,11 +25,11 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Members.Add(entity);
         }
 
-        public override void ResolveTypes(ParserContext context)
+        public override void ResolveTypesForSignatures(ParserContext context)
         {
             foreach (TopLevelEntity member in this.Members)
             {
-                member.ResolveTypes(context);
+                member.ResolveTypesForSignatures(context);
             }
         }
     }

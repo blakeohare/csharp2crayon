@@ -20,7 +20,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Value = value;
         }
 
-        public override void ResolveTypes(ParserContext context)
+        public override void ResolveTypesForSignatures(ParserContext context)
         {
             this.ResolvedType = this.DoTypeLookup(this.Type, context);
         }

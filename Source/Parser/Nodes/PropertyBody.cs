@@ -16,9 +16,9 @@ namespace CSharp2Crayon.Parser.Nodes
             this.IsGetter = isGetter;
         }
 
-        public override void ResolveTypes(ParserContext context)
+        public override void ResolveTypesForSignatures(ParserContext context)
         {
-            throw new System.NotImplementedException();
+
         }
     }
 }

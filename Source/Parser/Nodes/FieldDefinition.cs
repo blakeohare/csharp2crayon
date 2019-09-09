@@ -21,7 +21,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.InitialValue = nullableInitialValue;
         }
 
-        public override void ResolveTypes(ParserContext context)
+        public override void ResolveTypesForSignatures(ParserContext context)
         {
             this.ResolvedType = this.DoTypeLookup(this.Type, context);
         }

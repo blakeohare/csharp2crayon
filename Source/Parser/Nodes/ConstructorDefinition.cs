@@ -35,7 +35,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.BaseConstructorArgs = nullableBaseConstructorArguments == null ? null : nullableBaseConstructorArguments.ToArray();
         }
 
-        public override void ResolveTypes(ParserContext context)
+        public override void ResolveTypesForSignatures(ParserContext context)
         {
             this.ResolvedArgTypes = this.ArgTypes.Select(t => this.DoTypeLookup(t, context)).ToArray();
         }

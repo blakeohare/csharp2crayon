@@ -66,9 +66,9 @@ namespace CSharp2Crayon.Parser
 
         private void ResolveTypes()
         {
-            foreach (ClassLikeDefinition classDef in this.entityMap.Values.OfType<ClassLikeDefinition>())
+            foreach (TopLevelEntity tle in this.entityMap.Values)
             {
-                classDef.ResolveTypes(this);
+                tle.ResolveTypesForSignatures(this);
             }
         }
 

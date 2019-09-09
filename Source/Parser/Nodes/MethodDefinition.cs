@@ -37,7 +37,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ArgModifiers = argModifiers.ToArray();
         }
 
-        public override void ResolveTypes(ParserContext context)
+        public override void ResolveTypesForSignatures(ParserContext context)
         {
             this.ResolvedReturnType = this.DoTypeLookup(this.ReturnType, context);
             this.ResolvedArgTypes = this.ArgTypes.Select(t => this.DoTypeLookup(t, context)).ToArray();
