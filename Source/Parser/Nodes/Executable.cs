@@ -17,14 +17,14 @@ namespace CSharp2Crayon.Parser.Nodes
             return this.parent.DoTypeLookup(type, context);
         }
 
-        public abstract IList<Executable> ResolveTypes(ParserContext context);
+        public abstract IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope);
 
-        public static Executable[] ResolveTypesForCode(IList<Executable> code, ParserContext context)
+        public static Executable[] ResolveTypesForCode(IList<Executable> code, ParserContext context, VariableScope varScope)
         {
             List<Executable> output = new List<Executable>();
             foreach (Executable exec in code)
             {
-                output.AddRange(exec.ResolveTypes(context));
+                output.AddRange(exec.ResolveTypes(context, varScope));
             }
             return output.ToArray();
         }

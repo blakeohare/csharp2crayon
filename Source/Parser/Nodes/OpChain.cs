@@ -15,7 +15,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Ops = ops.ToArray();
         }
 
-        public override Expression ResolveTypes(ParserContext context)
+        public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
             throw new System.NotImplementedException();
         }

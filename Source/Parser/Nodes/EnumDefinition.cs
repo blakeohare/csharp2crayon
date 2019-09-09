@@ -34,7 +34,7 @@ namespace CSharp2Crayon.Parser.Nodes
                 Expression fieldValue = this.FieldValues[i];
                 if (fieldValue != null)
                 {
-                    this.FieldValues[i] = fieldValue.ResolveTypes(context);
+                    this.FieldValues[i] = fieldValue.ResolveTypes(context, new VariableScope());
                 }
             }
         }

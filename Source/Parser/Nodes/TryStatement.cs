@@ -39,7 +39,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.FinallyCode = finallyCode;
         }
 
-        public override IList<Executable> ResolveTypes(ParserContext context)
+        public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
             throw new System.NotImplementedException();
         }

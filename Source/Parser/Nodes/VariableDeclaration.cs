@@ -25,18 +25,21 @@ namespace CSharp2Crayon.Parser.Nodes
             this.InitialValue = value;
         }
 
-        public override IList<Executable> ResolveTypes(ParserContext context)
+        public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
             this.ResolvedType = this.DoTypeLookup(this.Type, context);
             if (this.InitialValue != null)
             {
-                this.InitialValue = this.InitialValue.ResolveTypes(context);
+                this.InitialValue = this.InitialValue.ResolveTypes(context, varScope);
             }
             else
             {
                 // default value
                 throw new System.NotImplementedException();
             }
+
+            varScope.DeclareVariable(this.VariableName.Value, this.ResolvedType);
+
             return Listify(this);
         }
     }

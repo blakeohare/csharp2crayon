@@ -10,7 +10,7 @@
             this.Root = root;
         }
 
-        public override Expression ResolveTypes(ParserContext context)
+        public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
             throw new System.NotImplementedException();
         }

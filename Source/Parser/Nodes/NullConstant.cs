@@ -6,7 +6,7 @@
             : base(firstToken, parent)
         { }
 
-        public override Expression ResolveTypes(ParserContext context)
+        public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
             this.ResolvedType = ResolvedType.CreateNull();
             return this;

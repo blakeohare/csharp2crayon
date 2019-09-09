@@ -31,7 +31,7 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override void ResolveTypesInCode(ParserContext context)
         {
-            this.Value = this.Value.ResolveTypes(context);
+            this.Value = this.Value.ResolveTypes(context, new VariableScope());
         }
     }
 }

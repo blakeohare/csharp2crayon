@@ -12,10 +12,10 @@
             this.Expression = expression;
         }
 
-        public override Expression ResolveTypes(ParserContext context)
+        public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
             this.ResolvedType = this.DoTypeLookup(this.Type, context);
-            this.Expression = this.Expression.ResolveTypes(context);
+            this.Expression = this.Expression.ResolveTypes(context, varScope);
             return this;
         }
     }

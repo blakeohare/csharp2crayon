@@ -30,7 +30,7 @@ namespace CSharp2Crayon.Parser.Nodes
         {
             if (this.InitialValue != null)
             {
-                this.InitialValue = this.InitialValue.ResolveTypes(context);
+                this.InitialValue = this.InitialValue.ResolveTypes(context, new VariableScope());
             }
         }
     }

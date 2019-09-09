@@ -10,7 +10,7 @@
             this.Value = Value;
         }
 
-        public override Expression ResolveTypes(ParserContext context)
+        public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
             this.ResolvedType = ResolvedType.CreatePrimitive("string", this.FirstToken);
             return this;

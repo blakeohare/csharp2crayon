@@ -12,9 +12,9 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Value = nullableExpression;
         }
 
-        public override IList<Executable> ResolveTypes(ParserContext context)
+        public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            if (this.Value != null) this.Value = this.Value.ResolveTypes(context);
+            if (this.Value != null) this.Value = this.Value.ResolveTypes(context, varScope);
             return Listify(this);
         }
     }

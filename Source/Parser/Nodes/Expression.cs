@@ -17,6 +17,6 @@
             return this.parent.DoTypeLookup(type, context);
         }
 
-        public abstract Expression ResolveTypes(ParserContext context);
+        public abstract Expression ResolveTypes(ParserContext context, VariableScope varScope);
     }
 }
