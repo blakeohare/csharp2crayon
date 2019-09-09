@@ -2,6 +2,8 @@
 {
     public abstract class Expression : Entity
     {
+        public ResolvedType Type { get; internal set; }
+
         public Expression(Token firstToken)
             : base(firstToken)
         { }

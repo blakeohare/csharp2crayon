@@ -9,7 +9,8 @@
 
         public override Expression ResolveTypes(ParserContext context)
         {
-            throw new System.NotImplementedException();
+            this.Type = ResolvedType.CreateNull();
+            return this;
         }
     }
 }

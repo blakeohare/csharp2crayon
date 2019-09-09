@@ -19,5 +19,10 @@ namespace CSharp2Crayon.Parser.Nodes
             }
             return output.ToArray();
         }
+
+        public static Executable[] Listify(Executable e)
+        {
+            return new Executable[] { e };
+        }
     }
 }

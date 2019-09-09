@@ -66,12 +66,16 @@ namespace CSharp2Crayon.Parser
 
         private void ResolveTypes()
         {
-            foreach (TopLevelEntity tle in this.entityMap.Values)
+            TopLevelEntity[] entities = this.entityMap.Keys
+                .OrderBy(k => k)
+                .Select(k => this.entityMap[k])
+                .ToArray();
+            foreach (TopLevelEntity tle in entities)
             {
                 tle.ResolveTypesForSignatures(this);
             }
 
-            foreach (TopLevelEntity tle in this.entityMap.Values)
+            foreach (TopLevelEntity tle in entities)
             {
                 tle.ResolveTypesInCode(this);
             }

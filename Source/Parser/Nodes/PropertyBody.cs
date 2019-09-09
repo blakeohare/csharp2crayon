@@ -23,7 +23,7 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override void ResolveTypesInCode(ParserContext context)
         {
-            throw new System.NotImplementedException();
+            this.Code = Executable.ResolveTypesForCode(this.Code, context);
         }
     }
 }

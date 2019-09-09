@@ -5,6 +5,7 @@ namespace CSharp2Crayon.Parser.Nodes
     public class VariableDeclaration : Executable
     {
         public CSharpType Type { get; private set; }
+        public ResolvedType ResolvedType { get; private set; }
         public Token AssignmentToken { get; private set; }
         public Token VariableName { get; private set; }
         public Expression InitialValue { get; private set; }

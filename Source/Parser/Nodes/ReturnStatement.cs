@@ -14,7 +14,8 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override IList<Executable> ResolveTypes(ParserContext context)
         {
-            throw new System.NotImplementedException();
+            if (this.Value != null) this.Value = this.Value.ResolveTypes(context);
+            return Listify(this);
         }
     }
 }

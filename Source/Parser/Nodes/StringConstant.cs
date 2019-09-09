@@ -11,7 +11,8 @@
 
         public override Expression ResolveTypes(ParserContext context)
         {
-            throw new System.NotImplementedException();
+            this.Type = ResolvedType.CreatePrimitive("string", this.FirstToken);
+            return this;
         }
     }
 }

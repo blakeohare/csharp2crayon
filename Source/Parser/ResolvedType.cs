@@ -13,7 +13,35 @@ namespace CSharp2Crayon.Parser
         public bool IsArray { get; private set; }
         public bool IsNullable { get; private set; }
         public ResolvedType[] Generics { get; private set; }
+
+        public bool IsNull { get; private set; } // The null type is for expressions and works like a generic object reference except it can be assigned to more specific things.
+
         private static readonly ResolvedType[] EMPTY_GENERICS = new ResolvedType[0];
+
+        public static ResolvedType CreateNull()
+        {
+            return new ResolvedType()
+            {
+                Generics = EMPTY_GENERICS,
+                PrimitiveType = "null",
+                IsNull = true
+            };
+        }
+
+        public static ResolvedType CreatePrimitive(string name, Token throwToken)
+        {
+            if (PRIMITIVE_TYPES.Contains(name))
+            {
+                return new ResolvedType()
+                {
+                    Generics = EMPTY_GENERICS,
+                    IsVoid = name == "void",
+                    PrimitiveType = name,
+                };
+            }
+
+            throw new ParserException(throwToken, "Unrecognized primitive type: " + name);
+        }
 
         public static ResolvedType Create(CSharpType type, string[] prefixes, ParserContext context)
         {
