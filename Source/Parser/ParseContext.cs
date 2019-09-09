@@ -50,6 +50,7 @@ namespace CSharp2Crayon.Parser
         {
             this.BuildEntityMap();
             this.ResolveSubclasses();
+            this.ResolveTypes();
         }
 
         private void ResolveSubclasses()
@@ -60,6 +61,14 @@ namespace CSharp2Crayon.Parser
                 {
                     ((ClassLikeDefinition)entity).ResolveParentClasses(this);
                 }
+            }
+        }
+
+        private void ResolveTypes()
+        {
+            foreach (ClassLikeDefinition classDef in this.entityMap.Values.OfType<ClassLikeDefinition>())
+            {
+                classDef.ResolveTypes(this);
             }
         }
 

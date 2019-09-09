@@ -15,5 +15,10 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ApplyModifiers(modifiers);
             this.IsGetter = isGetter;
         }
+
+        public override void ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

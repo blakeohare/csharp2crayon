@@ -27,5 +27,10 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Type = type;
             this.Name = name;
         }
+
+        public override void ResolveTypes(ParserContext context)
+        {
+
+        }
     }
 }

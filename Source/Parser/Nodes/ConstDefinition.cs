@@ -6,6 +6,7 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         public Token Name { get; private set; }
         public CSharpType Type { get; private set; }
+        public ResolvedType ResolvedType { get; private set; }
         public Expression Value { get; private set; }
 
         public override string NameValue { get { return this.Name.Value; } }
@@ -17,6 +18,11 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Name = name;
             this.Type = constType;
             this.Value = value;
+        }
+
+        public override void ResolveTypes(ParserContext context)
+        {
+            this.ResolvedType = this.DoTypeLookup(this.Type, context);
         }
     }
 }

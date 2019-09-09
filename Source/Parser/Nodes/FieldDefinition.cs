@@ -5,6 +5,8 @@ namespace CSharp2Crayon.Parser.Nodes
     public class FieldDefinition : TopLevelEntity
     {
         public CSharpType Type { get; private set; }
+        public ResolvedType ResolvedType { get; private set; }
+
         public Token Name { get; private set; }
         public Expression InitialValue { get; private set; }
 
@@ -17,6 +19,11 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Type = type;
             this.Name = name;
             this.InitialValue = nullableInitialValue;
+        }
+
+        public override void ResolveTypes(ParserContext context)
+        {
+            this.ResolvedType = this.DoTypeLookup(this.Type, context);
         }
     }
 }

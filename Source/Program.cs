@@ -15,6 +15,7 @@ namespace CSharp2Crayon
             "Common/JsonParser.cs",
             "Common/Multimap.cs",
             "Common/Pair.cs",
+            "Common/SystemBitmap.cs",
             "Common/Util.cs",
         };
 

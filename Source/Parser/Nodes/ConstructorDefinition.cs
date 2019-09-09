@@ -8,12 +8,13 @@ namespace CSharp2Crayon.Parser.Nodes
         public CSharpType[] ArgTypes { get; private set; }
         public Token[] ArgNames { get; private set; }
         public Token[] ArgModifiers { get; private set; }
+        public ResolvedType[] ResolvedArgTypes { get; private set; }
 
         public Token BaseConstructorInvocation { get; private set; }
         public Expression[] BaseConstructorArgs { get; private set; }
         public Executable[] Code { get; internal set; }
 
-        public override string NameValue { get { return this.NameValue; } }
+        public override string NameValue { get { return "ctor"; } }
 
         public ConstructorDefinition(
             Token firstToken,
@@ -32,6 +33,11 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ArgModifiers = argModifiers.ToArray();
             this.BaseConstructorInvocation = nullableBaseConstructorInvocation;
             this.BaseConstructorArgs = nullableBaseConstructorArguments == null ? null : nullableBaseConstructorArguments.ToArray();
+        }
+
+        public override void ResolveTypes(ParserContext context)
+        {
+            this.ResolvedArgTypes = this.ArgTypes.Select(t => this.DoTypeLookup(t, context)).ToArray();
         }
     }
 }

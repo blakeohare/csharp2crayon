@@ -11,5 +11,11 @@ namespace CSharp2Crayon.Parser.Nodes
         {
             this.Path = parts.ToArray();
         }
+
+        public override void ResolveTypes(ParserContext context)
+        {
+            // This should never get called.
+            throw new System.NotImplementedException();
+        }
     }
 }

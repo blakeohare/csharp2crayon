@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace CSharp2Crayon.Parser.Nodes
 {
@@ -11,6 +12,7 @@ namespace CSharp2Crayon.Parser.Nodes
 
         UNSPECIFIED,
     }
+
     public abstract class TopLevelEntity : Entity
     {
         public bool IsStatic { get; private set; }
@@ -83,5 +85,35 @@ namespace CSharp2Crayon.Parser.Nodes
                 }
             }
         }
+
+        private string[] namespaceSearchPrefixes = null;
+        private string[] GetAllNamespaceSearchPrefixes()
+        {
+            if (this.namespaceSearchPrefixes == null)
+            {
+                List<string> output = new List<string>() { "" };
+                List<string> namespaceChain = new List<string>(this.FullyQualifiedNameParts);
+                while (namespaceChain.Count > 0)
+                {
+                    output.Add(string.Join(".", namespaceChain));
+                    namespaceChain.RemoveAt(namespaceChain.Count - 1);
+                }
+                output.AddRange(this.FileContext.NamespaceSearchPrefixes);
+
+                this.namespaceSearchPrefixes = output
+                    .Select(ns => (ns.Length == 0) ? ns : (ns + "."))
+                    .ToArray();
+            }
+            return this.namespaceSearchPrefixes;
+        }
+
+        protected ResolvedType DoTypeLookup(CSharpType type, ParserContext context)
+        {
+            ResolvedType rType = ResolvedType.Create(type, this.GetAllNamespaceSearchPrefixes(), context);
+            if (rType == null) throw new ParserException(type.FirstToken, "Could not resolve parent class or interface: " + type.ToString());
+            return rType;
+        }
+
+        public abstract void ResolveTypes(ParserContext context);
     }
 }

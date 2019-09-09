@@ -19,5 +19,10 @@ namespace CSharp2Crayon.Parser.Nodes
             this.FieldNames = fieldNames.ToArray();
             this.FieldValues = fieldValues.ToArray();
         }
+
+        public override void ResolveTypes(ParserContext context)
+        {
+            
+        }
     }
 }
