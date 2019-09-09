@@ -5,14 +5,14 @@ namespace CSharp2Crayon.Parser
 {
     public static class TopLevelParser
     {
-        public static TopLevelEntity Parse(ParserContext context, TokenStream tokens)
+        public static TopLevelEntity Parse(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
-            TopLevelEntity tle = ParseImpl(context, tokens);
+            TopLevelEntity tle = ParseImpl(context, tokens, parent);
             tle.FileContext = context.ActiveFileContext;
             return tle;
         }
 
-        private static TopLevelEntity ParseImpl(ParserContext context, TokenStream tokens)
+        private static TopLevelEntity ParseImpl(ParserContext context, TokenStream tokens, TopLevelEntity parent)
         {
             if (!tokens.HasMore)
             {
@@ -29,14 +29,14 @@ namespace CSharp2Crayon.Parser
                     return ParseUsing(context, tokens);
                 case "namespace":
                     EnsureModifiersEmpty(modifiers, firstToken);
-                    return ParseNamespace(context, tokens);
+                    return ParseNamespace(context, parent, tokens);
 
                 case "interface":
                 case "class":
-                    return ParseClass(context, firstToken, modifiers, tokens);
+                    return ParseClass(context, parent, firstToken, modifiers, tokens);
 
                 case "enum":
-                    return ParseEnumDefinition(context, firstToken, modifiers, tokens);
+                    return ParseEnumDefinition(context, parent, firstToken, modifiers, tokens);
 
                 default:
                     throw new ParserException(tokens.Peek(), "Unexpected token: '" + next + "'");
@@ -103,7 +103,7 @@ namespace CSharp2Crayon.Parser
             return new UsingDirective(usingToken, parts);
         }
 
-        public static Namespace ParseNamespace(ParserContext context, TokenStream tokens)
+        public static Namespace ParseNamespace(ParserContext context, TopLevelEntity parent, TokenStream tokens)
         {
             Token namespaceToken = tokens.PopExpected("namespace");
             List<Token> nsNameParts = new List<Token>();
@@ -113,17 +113,17 @@ namespace CSharp2Crayon.Parser
                 tokens.PopExpected(".");
                 nsNameParts.Add(tokens.PopWord());
             }
-            Namespace ns = new Namespace(namespaceToken, nsNameParts);
+            Namespace ns = new Namespace(namespaceToken, nsNameParts, parent);
             tokens.PopExpected("{");
             while (!tokens.PopIfPresent("}"))
             {
-                TopLevelEntity tle = Parse(context, tokens);
+                TopLevelEntity tle = Parse(context, tokens, ns);
                 ns.AddMember(tle);
             }
             return ns;
         }
 
-        public static ClassLikeDefinition ParseClass(ParserContext context, Token firstToken, Dictionary<string, Token> modifiers, TokenStream tokens)
+        public static ClassLikeDefinition ParseClass(ParserContext context, TopLevelEntity parent, Token firstToken, Dictionary<string, Token> modifiers, TokenStream tokens)
         {
             if (!tokens.IsNext("class") && !tokens.IsNext("interface"))
             {
@@ -150,11 +150,11 @@ namespace CSharp2Crayon.Parser
             ClassLikeDefinition cd;
             if (isInterface)
             {
-                cd = new InterfaceDefinition(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch);
+                cd = new InterfaceDefinition(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch, parent);
             }
             else
             {
-                cd = new ClassDefinition(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch);
+                cd = new ClassDefinition(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch, parent);
             }
 
             while (!tokens.PopIfPresent("}"))
@@ -176,41 +176,41 @@ namespace CSharp2Crayon.Parser
 
             if (tokens.IsNext("enum"))
             {
-                return ParseEnumDefinition(context, firstToken, modifiers, tokens);
+                return ParseEnumDefinition(context, classDef, firstToken, modifiers, tokens);
             }
 
             if (tokens.IsNext("class"))
             {
-                return ParseClass(context, firstToken, modifiers, tokens);
+                return ParseClass(context, classDef, firstToken, modifiers, tokens);
             }
 
             if (tokens.IsNext("const"))
             {
-                return ParseConstDefinition(context, firstToken, modifiers, tokens);
+                return ParseConstDefinition(context, classDef, firstToken, modifiers, tokens);
             }
 
             CSharpType type = CSharpType.TryParse(tokens);
 
             if (tokens.IsNext("(") && type.SimpleTypeName == className.Value)
             {
-                return ParseClassConstructor(context, firstToken, modifiers, type, tokens);
+                return ParseClassConstructor(context, classDef, firstToken, modifiers, type, tokens);
             }
 
             Token memberName = tokens.PopWord();
 
             if (tokens.IsNext(";") || tokens.IsNext("="))
             {
-                return ParseClassField(context, firstToken, modifiers, type, memberName, tokens);
+                return ParseClassField(context, classDef, firstToken, modifiers, type, memberName, tokens);
             }
 
             if (tokens.IsNext("[") && memberName.Value == "this")
             {
-                return ParseIndexProperty(context, firstToken, modifiers, type, tokens);
+                return ParseIndexProperty(context, classDef, firstToken, modifiers, type, tokens);
             }
 
             if (tokens.IsNext("{"))
             {
-                return ParseClassProperty(context, firstToken, modifiers, type, memberName, tokens);
+                return ParseClassProperty(context, classDef, firstToken, modifiers, type, memberName, tokens);
             }
 
             if (tokens.IsNext("("))
@@ -223,6 +223,7 @@ namespace CSharp2Crayon.Parser
 
         private static TopLevelEntity ParseEnumDefinition(
             ParserContext context,
+            TopLevelEntity parent,
             Token firstToken,
             Dictionary<string, Token> modifiers,
             TokenStream tokens)
@@ -247,11 +248,12 @@ namespace CSharp2Crayon.Parser
 
                 nextAllowed = tokens.PopIfPresent(",");
             }
-            return new EnumDefinition(firstToken, modifiers, enumName, fieldNames, fieldValues);
+            return new EnumDefinition(firstToken, modifiers, enumName, fieldNames, fieldValues, parent);
         }
 
         private static TopLevelEntity ParseConstDefinition(
             ParserContext context,
+            TopLevelEntity parent,
             Token firstToken,
             Dictionary<string, Token> modifiers,
             TokenStream tokens)
@@ -263,11 +265,12 @@ namespace CSharp2Crayon.Parser
             Expression value = ExpressionParser.Parse(context, tokens);
             tokens.PopExpected(";");
 
-            return new ConstDefinition(firstToken, modifiers, constType, name, value);
+            return new ConstDefinition(firstToken, modifiers, constType, name, value, parent);
         }
 
         private static TopLevelEntity ParseClassConstructor(
             ParserContext context,
+            ClassLikeDefinition classDef,
             Token firstToken,
             Dictionary<string, Token> modifiers,
             CSharpType type,
@@ -306,7 +309,8 @@ namespace CSharp2Crayon.Parser
                 argNames,
                 argModifiers,
                 baseConstructorInvocation,
-                baseConstructorArgs);
+                baseConstructorArgs,
+                classDef);
             constructorDef.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
 
             return constructorDef;
@@ -314,6 +318,7 @@ namespace CSharp2Crayon.Parser
 
         private static TopLevelEntity ParseClassField(
             ParserContext context,
+            ClassLikeDefinition parent,
             Token firstToken,
             Dictionary<string, Token> modifiers,
             CSharpType type,
@@ -327,11 +332,12 @@ namespace CSharp2Crayon.Parser
                 initialValue = ExpressionParser.Parse(context, tokens);
                 tokens.PopExpected(";");
             }
-            return new FieldDefinition(firstToken, modifiers, type, fieldName, initialValue);
+            return new FieldDefinition(firstToken, modifiers, type, fieldName, initialValue, parent);
         }
 
         private static TopLevelEntity ParseClassProperty(
             ParserContext context,
+            ClassLikeDefinition parent,
             Token firstToken,
             Dictionary<string, Token> modifiers,
             CSharpType type,
@@ -339,6 +345,8 @@ namespace CSharp2Crayon.Parser
             TokenStream tokens)
         {
             tokens.PopExpected("{");
+
+            PropertyDefinition propertyDefinition = new PropertyDefinition(firstToken, modifiers, type, propertyName, parent);
 
             PropertyBody getter = null;
             PropertyBody setter = null;
@@ -350,13 +358,13 @@ namespace CSharp2Crayon.Parser
                 if (tokens.IsNext("get") && getter == null)
                 {
                     Token getToken = tokens.Pop();
-                    getter = new PropertyBody(bodyFirstToken, bodyModifiers, true);
+                    getter = new PropertyBody(bodyFirstToken, bodyModifiers, true, propertyDefinition);
                     if (!tokens.PopIfPresent(";")) getter.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
                 }
                 else if (tokens.IsNext("set") && setter == null)
                 {
                     Token setToken = tokens.Pop();
-                    setter = new PropertyBody(bodyFirstToken, bodyModifiers, false);
+                    setter = new PropertyBody(bodyFirstToken, bodyModifiers, false, propertyDefinition);
                     if (!tokens.PopIfPresent(";")) setter.Code = ExecutableParser.ParseCodeBlock(context, tokens, true);
                 }
                 else if (getter == null)
@@ -370,7 +378,10 @@ namespace CSharp2Crayon.Parser
             }
             tokens.PopExpected("}");
 
-            return new PropertyDefinition(firstToken, modifiers, type, propertyName, getter, setter);
+            propertyDefinition.Getter = getter;
+            propertyDefinition.Setter = setter;
+
+            return propertyDefinition;
         }
 
         private static TopLevelEntity ParseClassMethod(
@@ -394,7 +405,8 @@ namespace CSharp2Crayon.Parser
                 methodName,
                 argNames,
                 argTypes,
-                argModifiers);
+                argModifiers,
+                classDef);
 
             if (methodDef.IsAbstract || classDef is InterfaceDefinition)
             {
@@ -409,6 +421,7 @@ namespace CSharp2Crayon.Parser
         }
         private static TopLevelEntity ParseIndexProperty(
             ParserContext context,
+            ClassLikeDefinition parent,
             Token firstToken,
             Dictionary<string, Token> modifiers,
             CSharpType type,
@@ -419,6 +432,8 @@ namespace CSharp2Crayon.Parser
             Token indexVariableName = tokens.PopWord();
             tokens.PopExpected("]");
             tokens.PopExpected("{");
+
+            PropertyDefinition indexProperty = new PropertyDefinition(firstToken, modifiers, type, null, parent);
 
             PropertyBody getter = null;
             PropertyBody setter = null;
@@ -431,15 +446,18 @@ namespace CSharp2Crayon.Parser
                 if (isGet && getter != null) tokens.PopExpected("set"); //intentionally throw
                 tokens.Pop(); // get/set already fetched with Peek() above.
                 Executable[] code = ExecutableParser.ParseCodeBlock(context, tokens, true);
-                PropertyBody body = new PropertyBody(getOrSetToken, new Dictionary<string, Token>(), isGet);
+                PropertyBody body = new PropertyBody(getOrSetToken, new Dictionary<string, Token>(), isGet, indexProperty);
                 body.Code = code;
                 if (isGet) getter = body;
                 else setter = body;
             }
 
-            PropertyDefinition indexProperty = new PropertyDefinition(firstToken, modifiers, type, null, getter, setter);
             indexProperty.IndexType = indexType;
             indexProperty.IndexVariableName = indexVariableName;
+
+            indexProperty.Getter = getter;
+            indexProperty.Setter = setter;
+
             return indexProperty;
         }
 

@@ -21,9 +21,33 @@ namespace CSharp2Crayon.Parser.Nodes
         public bool IsVirtual { get; private set; }
         public FileContext FileContext { get; set; }
 
-        public TopLevelEntity(Token firstToken)
+        public TopLevelEntity Parent { get; private set; }
+
+        private string[] fullyQualifiedNameParts = null;
+        public string[] FullyQualifiedNameParts
+        {
+            get
+            {
+                if (this.fullyQualifiedNameParts == null)
+                {
+                    List<string> path = new List<string>();
+                    if (this.Parent != null)
+                    {
+                        path.AddRange(this.Parent.FullyQualifiedNameParts);
+                    }
+                    path.Add(this.NameValue);
+                    this.fullyQualifiedNameParts = path.ToArray();
+                }
+                return this.fullyQualifiedNameParts;
+            }
+        }
+
+        public virtual string NameValue { get; }
+
+        public TopLevelEntity(Token firstToken, TopLevelEntity parent)
             : base(firstToken)
         {
+            this.Parent = parent;
         }
 
         protected void ApplyModifiers(Dictionary<string, Token> modifiers)

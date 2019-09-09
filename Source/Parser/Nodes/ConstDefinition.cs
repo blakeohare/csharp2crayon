@@ -8,8 +8,10 @@ namespace CSharp2Crayon.Parser.Nodes
         public CSharpType Type { get; private set; }
         public Expression Value { get; private set; }
 
-        public ConstDefinition(Token firstToken, Dictionary<string, Token> modifiers, CSharpType constType, Token name, Expression value)
-            : base(firstToken)
+        public override string NameValue { get { return this.Name.Value; } }
+
+        public ConstDefinition(Token firstToken, Dictionary<string, Token> modifiers, CSharpType constType, Token name, Expression value, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.ApplyModifiers(modifiers);
             this.Name = name;

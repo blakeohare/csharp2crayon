@@ -27,7 +27,7 @@ namespace CSharp2Crayon.Parser
 
             while (tokens.HasMore)
             {
-                TopLevelEntity tle = TopLevelParser.Parse(this, tokens);
+                TopLevelEntity tle = TopLevelParser.Parse(this, tokens, null);
                 if (tle is UsingDirective)
                 {
                     this.ActiveFileContext.AddUsing((UsingDirective)tle);
@@ -43,6 +43,15 @@ namespace CSharp2Crayon.Parser
         public void Resolve()
         {
             this.BuildEntityMap();
+            this.ResolveSubclasses();
+        }
+
+        private void ResolveSubclasses()
+        {
+            foreach (TopLevelEntity entity in this.entityMap.Values)
+            {
+                System.Console.WriteLine(entity.NameValue);
+            }
         }
 
         private void BuildEntityMap()

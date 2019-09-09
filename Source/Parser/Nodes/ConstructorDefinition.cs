@@ -13,6 +13,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Expression[] BaseConstructorArgs { get; private set; }
         public Executable[] Code { get; internal set; }
 
+        public override string NameValue { get { return this.NameValue; } }
+
         public ConstructorDefinition(
             Token firstToken,
             Dictionary<string, Token> modifiers,
@@ -20,8 +22,9 @@ namespace CSharp2Crayon.Parser.Nodes
             IList<Token> argNames,
             IList<Token> argModifiers,
             Token nullableBaseConstructorInvocation,
-            IList<Expression> nullableBaseConstructorArguments)
-            : base(firstToken)
+            IList<Expression> nullableBaseConstructorArguments,
+            TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.ApplyModifiers(modifiers);
             this.ArgTypes = argTypes.ToArray();

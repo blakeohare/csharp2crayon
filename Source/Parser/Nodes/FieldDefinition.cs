@@ -8,8 +8,10 @@ namespace CSharp2Crayon.Parser.Nodes
         public Token Name { get; private set; }
         public Expression InitialValue { get; private set; }
 
-        public FieldDefinition(Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token name, Expression nullableInitialValue)
-            : base(firstToken)
+        public override string NameValue { get { return this.Name.Value; } }
+
+        public FieldDefinition(Token firstToken, Dictionary<string, Token> modifiers, CSharpType type, Token name, Expression nullableInitialValue, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.ApplyModifiers(modifiers);
             this.Type = type;

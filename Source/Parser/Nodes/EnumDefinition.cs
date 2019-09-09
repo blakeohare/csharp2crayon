@@ -9,8 +9,10 @@ namespace CSharp2Crayon.Parser.Nodes
         public Token[] FieldNames { get; private set; }
         public Expression[] FieldValues { get; private set; }
 
-        public EnumDefinition(Token firstToken, Dictionary<string, Token> modifiers, Token name, IList<Token> fieldNames, IList<Expression> fieldValues)
-            : base(firstToken)
+        public override string NameValue { get { return this.Name.Value; } }
+
+        public EnumDefinition(Token firstToken, Dictionary<string, Token> modifiers, Token name, IList<Token> fieldNames, IList<Expression> fieldValues, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.ApplyModifiers(modifiers);
             this.Name = name;

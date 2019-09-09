@@ -12,6 +12,8 @@ namespace CSharp2Crayon.Parser.Nodes
         public Token[] ArgModifiers { get; private set; }
         public CSharpType[] ArgTypes { get; private set; }
 
+        public override string NameValue { get { return this.Name.Value; } }
+
         public MethodDefinition(
             Token firstToken,
             Dictionary<string, Token> modifiers,
@@ -19,8 +21,9 @@ namespace CSharp2Crayon.Parser.Nodes
             Token methodName,
             IList<Token> argNames,
             IList<CSharpType> argTypes,
-            IList<Token> argModifiers)
-            : base(firstToken)
+            IList<Token> argModifiers,
+            ClassLikeDefinition parent)
+            : base(firstToken, parent)
         {
             this.ApplyModifiers(modifiers);
             this.ReturnType = returnType;

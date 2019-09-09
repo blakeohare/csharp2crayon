@@ -8,8 +8,13 @@ namespace CSharp2Crayon.Parser.Nodes
         public Token[] NameParts { get; private set; }
         public List<TopLevelEntity> Members { get; private set; }
 
-        public Namespace(Token firstToken, IList<Token> nameParts)
-            : base(firstToken)
+        public override string NameValue
+        {
+            get { return string.Join(".", this.NameParts.Select(t => t.Value)); }
+        }
+
+        public Namespace(Token firstToken, IList<Token> nameParts, TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.NameParts = nameParts.ToArray();
             this.Members = new List<TopLevelEntity>();

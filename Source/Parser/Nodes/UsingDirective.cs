@@ -7,7 +7,7 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         public Token[] Path { get; private set; }
 
-        public UsingDirective(Token usingToken, IList<Token> parts) : base(usingToken)
+        public UsingDirective(Token usingToken, IList<Token> parts) : base(usingToken, null)
         {
             this.Path = parts.ToArray();
         }

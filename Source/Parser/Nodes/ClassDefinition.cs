@@ -12,13 +12,16 @@ namespace CSharp2Crayon.Parser.Nodes
         private List<TopLevelEntity> membersBuilder = new List<TopLevelEntity>();
         private TopLevelEntity[] members = null;
 
+        public override string NameValue { get { return this.Name.Value; } }
+
         public ClassLikeDefinition(
             Token firstToken,
             Dictionary<string, Token> modifiers,
             Token classToken,
             Token classNameToken,
-            List<CSharpType> subClassesAndSuch)
-            : base(firstToken)
+            List<CSharpType> subClassesAndSuch,
+            TopLevelEntity parent)
+            : base(firstToken, parent)
         {
             this.ClassToken = classToken;
             this.Name = classNameToken;
@@ -53,8 +56,9 @@ namespace CSharp2Crayon.Parser.Nodes
             Dictionary<string, Token> modifiers,
             Token classToken,
             Token classNameToken,
-            List<CSharpType> subClassesAndSuch)
-            : base(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch)
+            List<CSharpType> subClassesAndSuch,
+            TopLevelEntity parent)
+            : base(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch, parent)
         { }
 
         public ClassLikeDefinition[] NestedClasses
@@ -75,8 +79,9 @@ namespace CSharp2Crayon.Parser.Nodes
             Dictionary<string, Token> modifiers,
             Token classToken,
             Token classNameToken,
-            List<CSharpType> subClassesAndSuch)
-            : base(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch)
+            List<CSharpType> subClassesAndSuch,
+            TopLevelEntity parent)
+            : base(firstToken, modifiers, classToken, classNameToken, subClassesAndSuch, parent)
         { }
     }
 }

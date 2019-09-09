@@ -7,9 +7,10 @@ namespace CSharp2Crayon.Parser.Nodes
         public bool IsGetter { get; private set; }
         public bool IsSetter { get { return !this.IsGetter; } }
         public Executable[] Code { get; internal set; }
+        public override string NameValue { get { return this.IsGetter ? "get" : "set"; } }
 
-        public PropertyBody(Token firstToken, Dictionary<string, Token> modifiers, bool isGetter)
-            : base(firstToken)
+        public PropertyBody(Token firstToken, Dictionary<string, Token> modifiers, bool isGetter, PropertyDefinition parent)
+            : base(firstToken, parent)
         {
             this.ApplyModifiers(modifiers);
             this.IsGetter = isGetter;
