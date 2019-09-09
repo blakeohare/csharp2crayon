@@ -18,5 +18,10 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ArrayLengthExpression = arrayLength;
             this.ArrayItems = arrayElements == null ? null : arrayElements.ToArray();
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

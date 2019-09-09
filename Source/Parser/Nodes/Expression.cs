@@ -1,11 +1,11 @@
 ﻿namespace CSharp2Crayon.Parser.Nodes
 {
-    public class Expression : Entity
+    public abstract class Expression : Entity
     {
         public Expression(Token firstToken)
             : base(firstToken)
-        {
+        { }
 
-        }
+        public abstract Expression ResolveTypes(ParserContext context);
     }
 }

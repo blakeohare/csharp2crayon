@@ -8,5 +8,10 @@
         {
             this.Value = value;
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

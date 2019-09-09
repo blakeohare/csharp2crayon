@@ -8,5 +8,10 @@
         {
             this.Root = root;
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

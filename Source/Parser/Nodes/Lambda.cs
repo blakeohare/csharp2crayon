@@ -16,5 +16,10 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ArrowToken = arrowToken;
             this.Code = code.ToArray();
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

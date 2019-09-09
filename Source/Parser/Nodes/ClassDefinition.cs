@@ -61,6 +61,14 @@ namespace CSharp2Crayon.Parser.Nodes
                 entity.ResolveTypesForSignatures(context);
             }
         }
+
+        public override void ResolveTypesInCode(ParserContext context)
+        {
+            foreach (TopLevelEntity entity in this.Members)
+            {
+                entity.ResolveTypesInCode(context);
+            }
+        }
     }
 
     public class ClassDefinition : ClassLikeDefinition

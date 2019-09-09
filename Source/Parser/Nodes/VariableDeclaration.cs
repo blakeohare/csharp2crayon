@@ -1,4 +1,6 @@
-﻿namespace CSharp2Crayon.Parser.Nodes
+﻿using System.Collections.Generic;
+
+namespace CSharp2Crayon.Parser.Nodes
 {
     public class VariableDeclaration : Executable
     {
@@ -19,6 +21,11 @@
             this.Type = variableType;
             this.AssignmentToken = assignmentToken;
             this.InitialValue = value;
+        }
+
+        public override IList<Executable> ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

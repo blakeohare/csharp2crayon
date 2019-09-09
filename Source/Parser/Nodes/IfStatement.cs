@@ -18,5 +18,10 @@ namespace CSharp2Crayon.Parser.Nodes
             this.ElseToken = elseToken;
             this.ElseCode = elseCode == null ? null : elseCode.ToArray();
         }
+
+        public override IList<Executable> ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

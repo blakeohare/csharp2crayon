@@ -115,5 +115,6 @@ namespace CSharp2Crayon.Parser.Nodes
         }
 
         public abstract void ResolveTypesForSignatures(ParserContext context);
+        public abstract void ResolveTypesInCode(ParserContext context);
     }
 }

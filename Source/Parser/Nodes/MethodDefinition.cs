@@ -7,7 +7,7 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         public Executable[] Code { get; internal set; }
         public CSharpType ReturnType { get; private set; }
-        
+
         public Token Name { get; private set; }
         public Token[] ArgNames { get; private set; }
         public Token[] ArgModifiers { get; private set; }
@@ -41,6 +41,11 @@ namespace CSharp2Crayon.Parser.Nodes
         {
             this.ResolvedReturnType = this.DoTypeLookup(this.ReturnType, context);
             this.ResolvedArgTypes = this.ArgTypes.Select(t => this.DoTypeLookup(t, context)).ToArray();
+        }
+
+        public override void ResolveTypesInCode(ParserContext context)
+        {
+            this.Code = Executable.ResolveTypesForCode(this.Code, context);
         }
     }
 }

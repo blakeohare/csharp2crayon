@@ -17,5 +17,11 @@ namespace CSharp2Crayon.Parser.Nodes
             // This should never get called.
             throw new System.NotImplementedException();
         }
+
+        public override void ResolveTypesInCode(ParserContext context)
+        {
+            // This should never get called
+            throw new System.NotImplementedException();
+        }
     }
 }

@@ -22,7 +22,19 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override void ResolveTypesForSignatures(ParserContext context)
         {
-            
+
+        }
+
+        public override void ResolveTypesInCode(ParserContext context)
+        {
+            for (int i = 0; i < this.FieldValues.Length; ++i)
+            {
+                Expression fieldValue = this.FieldValues[i];
+                if (fieldValue != null)
+                {
+                    this.FieldValues[i] = fieldValue.ResolveTypes(context);
+                }
+            }
         }
     }
 }

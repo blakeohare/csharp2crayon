@@ -18,5 +18,10 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Args = args.ToArray();
             this.OutTokens = outTokens.ToArray();
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

@@ -19,5 +19,10 @@
             this.TrueExpression = trueExpression;
             this.FalseExpression = falseExpression;
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

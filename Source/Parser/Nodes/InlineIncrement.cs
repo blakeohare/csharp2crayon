@@ -15,5 +15,10 @@
             this.IsPrefix = IsPrefix;
             this.IsIncrement = this.IncrementToken.Value == "++";
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

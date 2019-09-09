@@ -11,5 +11,10 @@
             this.Type = castType;
             this.Expression = expression;
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

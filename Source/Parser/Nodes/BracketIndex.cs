@@ -13,5 +13,10 @@
             this.OpenBracket = openBracket;
             this.Index = index;
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

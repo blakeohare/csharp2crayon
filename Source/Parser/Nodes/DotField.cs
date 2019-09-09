@@ -14,5 +14,10 @@
             this.DotToken = dotToken;
             this.FieldName = fieldName;
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

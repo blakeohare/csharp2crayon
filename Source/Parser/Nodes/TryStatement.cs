@@ -37,6 +37,11 @@ namespace CSharp2Crayon.Parser.Nodes
             this.FinallyToken = finallyToken;
             this.FinallyCode = finallyCode;
         }
+
+        public override IList<Executable> ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public class CatchBlock

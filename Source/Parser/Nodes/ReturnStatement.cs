@@ -1,4 +1,6 @@
-﻿namespace CSharp2Crayon.Parser.Nodes
+﻿using System.Collections.Generic;
+
+namespace CSharp2Crayon.Parser.Nodes
 {
     public class ReturnStatement : Executable
     {
@@ -8,6 +10,11 @@
             : base(firstToken)
         {
             this.Value = nullableExpression;
+        }
+
+        public override IList<Executable> ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

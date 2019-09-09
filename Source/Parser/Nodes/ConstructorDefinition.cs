@@ -39,5 +39,18 @@ namespace CSharp2Crayon.Parser.Nodes
         {
             this.ResolvedArgTypes = this.ArgTypes.Select(t => this.DoTypeLookup(t, context)).ToArray();
         }
+
+        public override void ResolveTypesInCode(ParserContext context)
+        {
+            if (this.BaseConstructorArgs != null)
+            {
+                for (int i = 0; i < this.BaseConstructorArgs.Length; ++i)
+                {
+                    this.BaseConstructorArgs[i] = this.BaseConstructorArgs[i].ResolveTypes(context);
+                }
+            }
+
+            this.Code = Executable.ResolveTypesForCode(this.Code, context);
+        }
     }
 }

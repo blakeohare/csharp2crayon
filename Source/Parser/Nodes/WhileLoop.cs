@@ -1,4 +1,6 @@
-﻿namespace CSharp2Crayon.Parser.Nodes
+﻿using System.Collections.Generic;
+
+namespace CSharp2Crayon.Parser.Nodes
 {
     public class WhileLoop : Executable
     {
@@ -9,6 +11,11 @@
         {
             this.Condition = condition;
             this.Code = code;
+        }
+
+        public override IList<Executable> ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

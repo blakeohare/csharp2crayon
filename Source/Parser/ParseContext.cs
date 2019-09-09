@@ -70,6 +70,11 @@ namespace CSharp2Crayon.Parser
             {
                 tle.ResolveTypesForSignatures(this);
             }
+
+            foreach (TopLevelEntity tle in this.entityMap.Values)
+            {
+                tle.ResolveTypesInCode(this);
+            }
         }
 
         private void BuildEntityMap()

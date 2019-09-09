@@ -48,6 +48,11 @@ namespace CSharp2Crayon.Parser.Nodes
 
             this.Chunks = chunks.ToArray();
         }
+
+        public override IList<Executable> ResolveTypes(ParserContext context)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class SwitchStatementChunk

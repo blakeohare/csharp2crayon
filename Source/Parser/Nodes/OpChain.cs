@@ -14,5 +14,10 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Expressions = expressions.ToArray();
             this.Ops = ops.ToArray();
         }
+
+        public override Expression ResolveTypes(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

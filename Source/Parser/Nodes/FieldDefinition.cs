@@ -25,5 +25,13 @@ namespace CSharp2Crayon.Parser.Nodes
         {
             this.ResolvedType = this.DoTypeLookup(this.Type, context);
         }
+
+        public override void ResolveTypesInCode(ParserContext context)
+        {
+            if (this.InitialValue != null)
+            {
+                this.InitialValue = this.InitialValue.ResolveTypes(context);
+            }
+        }
     }
 }

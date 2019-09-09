@@ -32,5 +32,10 @@ namespace CSharp2Crayon.Parser.Nodes
                 member.ResolveTypesForSignatures(context);
             }
         }
+
+        public override void ResolveTypesInCode(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

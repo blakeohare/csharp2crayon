@@ -37,5 +37,10 @@ namespace CSharp2Crayon.Parser.Nodes
             if (this.Setter != null) this.Setter.ResolveTypesForSignatures(context);
             if (this.IndexType != null) this.IndexResolvedType = this.DoTypeLookup(this.IndexType, context);
         }
+
+        public override void ResolveTypesInCode(ParserContext context)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
