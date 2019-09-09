@@ -7,7 +7,8 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         public Token ClassToken { get; private set; }
         public Token Name { get; private set; }
-        public CSharpType[] RawSubClassInfoTokens { get; private set; }
+        public CSharpType[] RawParentClassInfoTokens { get; private set; }
+        public ResolvedType[] ParentClasses { get; private set; }
 
         private List<TopLevelEntity> membersBuilder = new List<TopLevelEntity>();
         private TopLevelEntity[] members = null;
@@ -19,14 +20,14 @@ namespace CSharp2Crayon.Parser.Nodes
             Dictionary<string, Token> modifiers,
             Token classToken,
             Token classNameToken,
-            List<CSharpType> subClassesAndSuch,
+            List<CSharpType> parentClassesAndSuch,
             TopLevelEntity parent)
             : base(firstToken, parent)
         {
             this.ClassToken = classToken;
             this.Name = classNameToken;
             this.ApplyModifiers(modifiers);
-            this.RawSubClassInfoTokens = subClassesAndSuch.ToArray();
+            this.RawParentClassInfoTokens = parentClassesAndSuch.ToArray();
         }
 
         public void AddMember(TopLevelEntity tle)
@@ -46,6 +47,44 @@ namespace CSharp2Crayon.Parser.Nodes
                 }
                 return this.members;
             }
+        }
+
+        private string[] namespaceSearchPrefixes = null;
+        private string[] GetAllNamespaceSearchPrefixes()
+        {
+            if (this.namespaceSearchPrefixes == null)
+            {
+                List<string> output = new List<string>() { "" };
+                List<string> namespaceChain = new List<string>(this.FullyQualifiedNameParts);
+                while (namespaceChain.Count > 0)
+                {
+                    output.Add(string.Join(".", namespaceChain));
+                    namespaceChain.RemoveAt(namespaceChain.Count - 1);
+                }
+                output.AddRange(this.FileContext.NamespaceSearchPrefixes);
+
+                this.namespaceSearchPrefixes = output
+                    .Select(ns => (ns.Length == 0) ? ns : (ns + "."))
+                    .ToArray();
+            }
+            return this.namespaceSearchPrefixes;
+        }
+
+        public void ResolveParentClasses(ParserContext context)
+        {
+            string[] prefixes = this.GetAllNamespaceSearchPrefixes();
+
+            List<ResolvedType> resolvedParentTypes = new List<ResolvedType>();
+            foreach (CSharpType parentClassType in this.RawParentClassInfoTokens)
+            {
+                ResolvedType type = ResolvedType.Create(parentClassType, prefixes, context);
+                if (type == null)
+                {
+                    throw new ParserException(parentClassType.FirstToken, "Could not resolve parent class or interface: " + parentClassType.ToString());
+                }
+                resolvedParentTypes.Add(type);
+            }
+            this.ParentClasses = resolvedParentTypes.ToArray();
         }
     }
 

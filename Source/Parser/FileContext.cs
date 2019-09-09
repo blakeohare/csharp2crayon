@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 using CSharp2Crayon.Parser.Nodes;
 
 namespace CSharp2Crayon.Parser
@@ -13,11 +13,28 @@ namespace CSharp2Crayon.Parser
         {
             this.FileName = filename;
             this.FileUsings = new List<UsingDirective>();
+
+        }
+
+        private string[] namespaceSearchPrefixes = null;
+        public string[] NamespaceSearchPrefixes
+        {
+            get
+            {
+                if (this.namespaceSearchPrefixes == null)
+                {
+                    List<string> prefixes = new List<string>() { "" };
+                    prefixes.AddRange(this.FileUsings.Select(u => string.Join(".", u.Path.Select(tok => tok.Value))));
+                    this.namespaceSearchPrefixes = prefixes.ToArray();
+                }
+                return this.namespaceSearchPrefixes;
+            }
         }
 
         public void AddUsing(UsingDirective u)
         {
             this.FileUsings.Add(u);
+            this.namespaceSearchPrefixes = null;
         }
     }
 }

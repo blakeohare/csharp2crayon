@@ -19,7 +19,21 @@ namespace CSharp2Crayon.Parser.Nodes
         public bool IsOverride { get; private set; }
         public bool IsReadOnly { get; private set; }
         public bool IsVirtual { get; private set; }
-        public FileContext FileContext { get; set; }
+
+        private FileContext fileContext = null;
+        public FileContext FileContext
+        {
+            get
+            {
+                if (this.fileContext != null) return this.fileContext;
+                if (this.Parent != null) return this.Parent.FileContext;
+                return null;
+            }
+            set
+            {
+                this.fileContext = value;
+            }
+        }
 
         public TopLevelEntity Parent { get; private set; }
 
@@ -35,7 +49,7 @@ namespace CSharp2Crayon.Parser.Nodes
                     {
                         path.AddRange(this.Parent.FullyQualifiedNameParts);
                     }
-                    path.Add(this.NameValue);
+                    path.AddRange(this.NameValue.Split('.'));
                     this.fullyQualifiedNameParts = path.ToArray();
                 }
                 return this.fullyQualifiedNameParts;

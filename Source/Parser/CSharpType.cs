@@ -12,6 +12,19 @@ namespace CSharp2Crayon.Parser
         public bool IsArray { get { return this.RootType[0].Value == "["; } }
         public bool IsNullable { get { return this.RootType[0].Value == "?"; } }
 
+        private string rootTypeString = null;
+        public string RootTypeString
+        {
+            get
+            {
+                if (this.rootTypeString == null)
+                {
+                    this.rootTypeString = string.Join('.', this.RootType.Select(t => t.Value));
+                }
+                return this.rootTypeString;
+            }
+        }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();

@@ -40,6 +40,12 @@ namespace CSharp2Crayon.Parser
             this.ActiveFileContext = null;
         }
 
+        public TopLevelEntity DoLookup(string name)
+        {
+            TopLevelEntity tle;
+            return this.entityMap.TryGetValue(name, out tle) ? tle : null;
+        }
+
         public void Resolve()
         {
             this.BuildEntityMap();
@@ -50,7 +56,10 @@ namespace CSharp2Crayon.Parser
         {
             foreach (TopLevelEntity entity in this.entityMap.Values)
             {
-                System.Console.WriteLine(entity.NameValue);
+                if (entity is ClassLikeDefinition)
+                {
+                    ((ClassLikeDefinition)entity).ResolveParentClasses(this);
+                }
             }
         }
 
