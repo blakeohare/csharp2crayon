@@ -20,7 +20,16 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            this.ListExpression = this.ListExpression.ResolveTypes(context, varScope);
+            VariableScope loopScope = new VariableScope(varScope);
+            ResolvedType itemType = this.ListExpression.ResolvedType.GetEnumerableItemType();
+            if (itemType == null)
+            {
+                throw new ParserException(this.ListExpression.FirstToken, "This expression is not enumerable.");
+            }
+            loopScope.DeclareVariable(this.VariableToken.Value, itemType);
+            this.Code = Executable.ResolveTypesForCode(this.Code, context, loopScope);
+            return Listify(this);
         }
     }
 }

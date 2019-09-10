@@ -19,17 +19,22 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            VerifiedFieldReference fieldRef = this.ResolveTypesWithoutArgs(context, varScope);
-            fieldRef.ResolveMethodReference(context, null);
-            return fieldRef;
+            return this.ResolveTypesWithoutArgs(context, varScope);
         }
 
         public VerifiedFieldReference ResolveTypesWithoutArgs(ParserContext context, VariableScope varScope)
         {
             this.Root = this.Root.ResolveTypes(context, varScope);
 
+            if (this.Root.ResolvedType == null)
+            {
+                // should always be resolved by now.
+                throw new System.InvalidOperationException();
+            }
+
             ResolvedType rootType = this.Root.ResolvedType;
             VerifiedFieldReference fieldRef = new VerifiedFieldReference(this.FirstToken, this.parent, this.FieldName, this.Root, null);
+            fieldRef.TryResolveFieldReference(context, null, varScope);
             return fieldRef;
         }
     }

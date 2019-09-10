@@ -37,6 +37,59 @@ namespace CSharp2Crayon.Parser.Nodes
             this.membersBuilder.Add(tle);
         }
 
+        private Dictionary<string, TopLevelEntity[]> membersByNameLocalOnly = null;
+        private Dictionary<string, TopLevelEntity[]> membersByNameFlattened = null;
+        public TopLevelEntity[] GetMember(string name)
+        {
+            if (this.membersByNameFlattened == null)
+            {
+                Dictionary<string, List<TopLevelEntity>> flattenedBuilder = new Dictionary<string, List<TopLevelEntity>>();
+                Dictionary<string, List<TopLevelEntity>> localBuilder = new Dictionary<string, List<TopLevelEntity>>();
+                ClassDefinition parent = this.ParentClasses.OfType<ClassDefinition>().FirstOrDefault();
+                if (parent != null)
+                {
+                    parent.GetMember(""); // build cache
+                    foreach (string memberName in parent.membersByNameFlattened.Keys)
+                    {
+                        flattenedBuilder[memberName] = new List<TopLevelEntity>(parent.membersByNameFlattened[memberName]);
+                    }
+                }
+
+                Dictionary<string, List<TopLevelEntity>>[] dicts = new Dictionary<string, List<TopLevelEntity>>[] {
+                    flattenedBuilder,
+                    localBuilder,
+                };
+
+                List<Dictionary<string, TopLevelEntity[]>> dicts2 = new List<Dictionary<string, TopLevelEntity[]>>();
+
+                foreach (Dictionary<string, List<TopLevelEntity>> dict in dicts)
+                {
+                    foreach (TopLevelEntity member in this.Members)
+                    {
+                        string memberName = member.NameValue;
+                        if (!dict.ContainsKey(memberName))
+                        {
+                            dict[memberName] = new List<TopLevelEntity>() { member };
+                        }
+                        else
+                        {
+                            dict[memberName].Insert(0, member); // will be looping from the front to find matches.
+                        }
+                    }
+                    Dictionary<string, TopLevelEntity[]> outputDict = new Dictionary<string, TopLevelEntity[]>();
+                    foreach (string memberName in dict.Keys)
+                    {
+                        outputDict[memberName] = dict[memberName].ToArray();
+                    }
+                    dicts2.Add(outputDict);
+                }
+                this.membersByNameFlattened = dicts2[0];
+                this.membersByNameLocalOnly = dicts2[1];
+            }
+            TopLevelEntity[] tle;
+            return this.membersByNameFlattened.TryGetValue(name, out tle) ? tle : null;
+        }
+
         public TopLevelEntity[] Members
         {
             get

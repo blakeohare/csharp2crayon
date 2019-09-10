@@ -12,7 +12,13 @@
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            this.Root = this.Root.ResolveTypes(context, varScope);
+            if (this.Root.ResolvedType.PrimitiveType != "bool")
+            {
+                throw new ParserException(this.Root.FirstToken, "This expression is not a boolean");
+            }
+            this.ResolvedType = ResolvedType.Bool();
+            return this;
         }
     }
 }

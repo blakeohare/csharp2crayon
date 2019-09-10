@@ -36,9 +36,11 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
+            VerifiedFieldReference vfr = null;
             if (this.Root is DotField)
             {
-                this.Root = ((DotField)this.Root).ResolveTypesWithoutArgs(context, varScope);
+                vfr = ((DotField)this.Root).ResolveTypesWithoutArgs(context, varScope);
+                this.Root = vfr;
             }
             else
             {
@@ -46,17 +48,25 @@ namespace CSharp2Crayon.Parser.Nodes
             }
 
             List<ResolvedType> argTypes = new List<ResolvedType>();
-            for (int i = 0; i < this.Args.Length; ++i)
+            if (vfr != null && this.Args.Length == 1 && this.Args[0] is Lambda)
             {
-                this.Args[i] = this.Args[i].ResolveTypes(context, varScope);
-                argTypes.Add(this.Args[i].ResolvedType);
+                ResolvedType resolvedType = vfr.GetEnumerableItemTypeGuess(context);
+                ((Lambda)this.Args[0]).ResolveTypesWithExteriorHint(context, varScope, new ResolvedType[] { resolvedType });
+            }
+            else
+            {
+                for (int i = 0; i < this.Args.Length; ++i)
+                {
+                    this.Args[i] = this.Args[i].ResolveTypes(context, varScope);
+                    argTypes.Add(this.Args[i].ResolvedType);
+                }
             }
 
             if (this.Root is VerifiedFieldReference)
             {
-                ((VerifiedFieldReference)this.Root).ResolveMethodReference(context, argTypes.ToArray());
+                ((VerifiedFieldReference)this.Root).ResolveFieldReference(context, argTypes.ToArray(), varScope);
                 ResolvedType rootType = this.Root.ResolvedType;
-                if (rootType.FrameworkClass != "System.Function")
+                if (rootType.FrameworkClass != "System.Func")
                 {
                     throw new ParserException(this.OpenParen, "Cannot invoke this like a function.");
                 }

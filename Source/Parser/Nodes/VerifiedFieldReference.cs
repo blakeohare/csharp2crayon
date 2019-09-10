@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CSharp2Crayon.Parser.Nodes
 {
@@ -12,6 +13,8 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public MethodDefinition Method { get; private set; }
         public FieldDefinition Field { get; private set; }
+        public PropertyDefinition Property { get; private set; }
+        public string PrimitiveMethod { get; private set; } // primitiveType.FieldName
         // TODO: add a FrameworkMethod class
 
         private MethodRefType type = MethodRefType.UNKNOWN;
@@ -28,6 +31,7 @@ namespace CSharp2Crayon.Parser.Nodes
             FRAMEWORK_METHOD,
             STATIC_FRAMEWORK_METHOD,
             STRING_METHOD,
+            PRIMITIVE_METHOD,
         }
 
         public VerifiedFieldReference(
@@ -50,7 +54,22 @@ namespace CSharp2Crayon.Parser.Nodes
             throw new InvalidOperationException();
         }
 
-        public void ResolveMethodReference(ParserContext context, ResolvedType[] argTypes)
+        public ResolvedType GetEnumerableItemTypeGuess(ParserContext context)
+        {
+            ResolvedType rootType = this.RootValue.ResolvedType;
+            return rootType.GetEnumerableItemType();
+        }
+
+        public void ResolveFieldReference(ParserContext context, ResolvedType[] argTypes, VariableScope varScope)
+        {
+            this.TryResolveFieldReference(context, argTypes, varScope);
+            if (this.ResolvedType == null)
+            {
+                throw new ParserException(this.Name, "Could not resolve this field.");
+            }
+        }
+
+        public void TryResolveFieldReference(ParserContext context, ResolvedType[] argTypes, VariableScope varScope)
         {
             if (this.StaticMethodSource != null)
             {
@@ -73,26 +92,77 @@ namespace CSharp2Crayon.Parser.Nodes
             }
             else
             {
+                if (this.RootValue.ResolvedType == null && this.RootValue is VerifiedFieldReference)
+                {
+                    this.RootValue.ResolveTypes(context, varScope);
+                }
                 ResolvedType rootType = this.RootValue.ResolvedType;
                 if (this.FileContext.HasLinq && rootType.IsEnumerable(context))
                 {
+                    this.type = MethodRefType.LINQ;
                     switch (this.Name.Value)
                     {
-                        case "OrderBy": throw new System.NotImplementedException();
-                        case "ToArray": throw new System.NotImplementedException();
+                        case "OrderBy":
+                            {
+                                ResolvedType itemType = rootType.GetEnumerableItemType();
+                                ResolvedType functionReturnType = ResolvedType.GetPrimitiveType("object"); // int or string or float or something, but whatever.
+                                ResolvedType function = ResolvedType.CreateFunctionPointerType(functionReturnType, new ResolvedType[] { itemType });
+                                this.ResolvedType = ResolvedType.CreateFunctionPointerType(
+                                    ResolvedType.CreateEnumerableType(itemType),
+                                    new ResolvedType[] { function });
+                            }
+                            break;
+
+                        case "ToArray":
+                            {
+                                ResolvedType itemType = rootType.GetEnumerableItemType();
+                                this.ResolvedType = ResolvedType.CreateFunctionPointerType(
+                                    ResolvedType.CreateArray(itemType),
+                                    new ResolvedType[0]);
+                            }
+                            break;
+
                         case "Select": throw new System.NotImplementedException();
                         case "Where": throw new System.NotImplementedException();
-                        default: break;
+                        default:
+                            this.type = MethodRefType.UNKNOWN;
+                            break;
+                    }
+                    if (this.type == MethodRefType.LINQ)
+                    {
+                        return;
                     }
                 }
 
                 if (rootType.CustomType != null)
                 {
-                    this.ResolveCustomMethodReference(argTypes);
+                    if (argTypes == null)
+                    {
+                        this.ResolveCustomFieldReference();
+                    }
+                    else
+                    {
+                        this.ResolveCustomMethodReference(argTypes);
+                    }
                 }
                 else if (rootType.FrameworkClass != null)
                 {
                     this.ResolveFrameworkMethodReference(argTypes);
+                }
+                else if (rootType.PrimitiveType != null)
+                {
+                    this.type = MethodRefType.PRIMITIVE_METHOD;
+                    this.PrimitiveMethod = rootType.PrimitiveType + "." + this.Name.Value;
+
+                    switch (this.PrimitiveMethod)
+                    {
+                        case "string.ToLowerInvariant":
+                            this.ResolvedType = ResolvedType.CreateFunctionPointerType(ResolvedType.String(), new ResolvedType[0]);
+                            break;
+
+                        default:
+                            throw new ParserException(this.Name, "string does not have a method called '" + this.Name.Value + "'");
+                    }
                 }
                 else
                 {
@@ -106,6 +176,29 @@ namespace CSharp2Crayon.Parser.Nodes
             throw new ParserException(this.FirstToken, "Not implemented");
         }
 
+        private void ResolveCustomFieldReference()
+        {
+            ClassLikeDefinition rootType = (ClassLikeDefinition)this.RootValue.ResolvedType.CustomType;
+            string fieldName = this.Name.Value;
+            TopLevelEntity member = rootType.GetMember(fieldName).FirstOrDefault();
+            if (member == null) throw new ParserException(this.Name, "Not implemented or not found."); // could be a framework field.
+
+            if (member is PropertyDefinition)
+            {
+                this.Property = (PropertyDefinition)member;
+                this.ResolvedType = this.Property.ResolvedType;
+            }
+            else if (member is FieldDefinition)
+            {
+                this.Field = (FieldDefinition)member;
+                this.ResolvedType = this.Field.ResolvedType;
+            }
+            else
+            {
+                throw new ParserException(this.FirstToken, "Not implemented");
+            }
+        }
+
         private void ResolveCustomMethodReference(ResolvedType[] argTypes)
         {
             throw new ParserException(this.FirstToken, "Not implemented");
@@ -113,6 +206,15 @@ namespace CSharp2Crayon.Parser.Nodes
 
         private void ResolveFrameworkMethodReference(ResolvedType[] argTypes)
         {
+            string className = this.RootValue.ResolvedType.FrameworkClass;
+            string methodName = this.Name.Value;
+            switch (className + ":" + methodName)
+            {
+                case "System.Collections.Generic.HashSet:Contains":
+                    throw new System.NotImplementedException();
+                default:
+                    throw new System.NotImplementedException();
+            }
             throw new ParserException(this.FirstToken, "Not implemented");
         }
 

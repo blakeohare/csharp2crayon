@@ -41,6 +41,21 @@ namespace CSharp2Crayon.Parser
             throw new System.NotImplementedException();
         }
 
+        public ResolvedType GetEnumerableItemType()
+        {
+            if (this.IsArray) return this.Generics[0];
+            switch (this.FrameworkClass)
+            {
+                case "System.Collections.Generic.List":
+                case "System.Collections.Generic.IList":
+                case "System.Collections.Generic.ICollection":
+                case "System.Collections.Generic.IEnumerable":
+                    return this.Generics[0];
+            }
+
+            throw new System.NotImplementedException();
+        }
+
         private static readonly Dictionary<string, ResolvedType> primitiveCache = new Dictionary<string, ResolvedType>();
         public static ResolvedType GetPrimitiveType(string name)
         {
@@ -55,6 +70,16 @@ namespace CSharp2Crayon.Parser
 
         public static ResolvedType String() { return GetPrimitiveType("string"); }
         public static ResolvedType Int() { return GetPrimitiveType("int"); }
+        public static ResolvedType Bool() { return GetPrimitiveType("bool"); }
+
+        public static ResolvedType CreateArray(ResolvedType itemType)
+        {
+            return new ResolvedType()
+            {
+                IsArray = true,
+                Generics = new ResolvedType[] { itemType }
+            };
+        }
 
         public static ResolvedType CreateFunctionPointerType(ResolvedType returnType, ResolvedType[] args)
         {
@@ -132,6 +157,7 @@ namespace CSharp2Crayon.Parser
             {
                 return new ResolvedType()
                 {
+                    Generics = EMPTY_GENERICS,
                     PrimitiveType = typeString,
                     IsVoid = typeString == "void",
                 };
