@@ -2,9 +2,10 @@
 {
     public abstract class Expression : Entity
     {
-        private TopLevelEntity parent;
+        protected TopLevelEntity parent;
 
         public ResolvedType ResolvedType { get; internal set; }
+        public FileContext FileContext { get { return this.parent.FileContext; } }
 
         public Expression(Token firstToken, TopLevelEntity parent)
             : base(firstToken)

@@ -8,6 +8,7 @@ namespace CSharp2Crayon.Parser
     {
         public string FileName { get; private set; }
         public List<UsingDirective> FileUsings { get; private set; }
+        public bool HasLinq { get; private set; }
 
         public FileContext(string filename)
         {
@@ -35,6 +36,8 @@ namespace CSharp2Crayon.Parser
         {
             this.FileUsings.Add(u);
             this.namespaceSearchPrefixes = null;
+            bool isLinq = string.Join('.', u.Path.Select(token => token.Value)) == "System.Linq";
+            this.HasLinq = this.HasLinq || isLinq;
         }
     }
 }

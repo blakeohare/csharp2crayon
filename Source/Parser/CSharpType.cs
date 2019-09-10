@@ -134,10 +134,12 @@ namespace CSharp2Crayon.Parser
                 if (tokens.PopIfPresent("<"))
                 {
                     bool isValid = true;
-                    List<CSharpType> generics = new List<CSharpType>();
                     CSharpType first = TryParseImpl(tokens, allowNullable);
+                    List<CSharpType> generics = new List<CSharpType>();
                     if (first != null)
                     {
+                        generics.Add(first);
+
                         while (isValid && !tokens.IsNext(">"))
                         {
                             if (!tokens.PopIfPresent(","))

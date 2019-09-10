@@ -22,6 +22,9 @@ namespace CSharp2Crayon.Parser.Nodes
         public bool IsReadOnly { get; private set; }
         public bool IsVirtual { get; private set; }
 
+        protected bool allParentTypeIdsPopulated = false;
+        public HashSet<string> AllParentTypeIds { get; private set; }
+
         private FileContext fileContext = null;
         public FileContext FileContext
         {
@@ -39,6 +42,18 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public TopLevelEntity Parent { get; private set; }
 
+        private string fullyQualifiedName = null;
+        public string FullyQualifiedName
+        {
+            get
+            {
+                if (this.fullyQualifiedName == null)
+                {
+                    this.fullyQualifiedName = string.Join('.', this.FullyQualifiedNameParts);
+                }
+                return this.fullyQualifiedName;
+            }
+        }
         private string[] fullyQualifiedNameParts = null;
         public string[] FullyQualifiedNameParts
         {
@@ -64,6 +79,7 @@ namespace CSharp2Crayon.Parser.Nodes
             : base(firstToken)
         {
             this.Parent = parent;
+            this.AllParentTypeIds = new HashSet<string>();
         }
 
         protected void ApplyModifiers(Dictionary<string, Token> modifiers)

@@ -1,4 +1,6 @@
-﻿namespace CSharp2Crayon.Parser.Nodes
+﻿using System.Collections.Generic;
+
+namespace CSharp2Crayon.Parser.Nodes
 {
     public class DotField : Expression
     {
@@ -17,7 +19,18 @@
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            VerifiedFieldReference fieldRef = this.ResolveTypesWithoutArgs(context, varScope);
+            fieldRef.ResolveMethodReference(context, null);
+            return fieldRef;
+        }
+
+        public VerifiedFieldReference ResolveTypesWithoutArgs(ParserContext context, VariableScope varScope)
+        {
+            this.Root = this.Root.ResolveTypes(context, varScope);
+
+            ResolvedType rootType = this.Root.ResolvedType;
+            VerifiedFieldReference fieldRef = new VerifiedFieldReference(this.FirstToken, this.parent, this.FieldName, this.Root, null);
+            return fieldRef;
         }
     }
 }

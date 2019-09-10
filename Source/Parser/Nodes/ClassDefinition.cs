@@ -69,6 +69,30 @@ namespace CSharp2Crayon.Parser.Nodes
                 entity.ResolveTypesInCode(context);
             }
         }
+
+        public void PopulateParentClassLookup(ParserContext context)
+        {
+            if (this.allParentTypeIdsPopulated) return;
+            this.allParentTypeIdsPopulated = true;
+
+            foreach (ResolvedType rtype in this.ParentClasses)
+            {
+                ClassLikeDefinition cd = rtype.CustomType as ClassLikeDefinition;
+                if (cd != null)
+                {
+                    cd.PopulateParentClassLookup(context);
+
+                    foreach (string id in cd.AllParentTypeIds)
+                    {
+                        this.AllParentTypeIds.Add(id);
+                    }
+                }
+                else
+                {
+                    throw new System.NotImplementedException();
+                }
+            }
+        }
     }
 
     public class ClassDefinition : ClassLikeDefinition
