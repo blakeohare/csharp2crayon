@@ -1,5 +1,22 @@
 ﻿namespace CSharp2Crayon.Parser.Nodes
 {
+    // The purpose of this class is to easily constructor multiple versions of the fragment but with different ResolvedTypes
+    public class ConstructorInvocationFragmentWrapper : Expression
+    {
+        public ConstructorInvocationFragment InnerFragment { get; set; }
+
+        public ConstructorInvocationFragmentWrapper(ConstructorInvocationFragment fragment)
+            : base(fragment.FirstToken, fragment.Parent)
+        {
+            this.InnerFragment = fragment;
+        }
+
+        public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
     // This class should not survive past the resolver phase
     public class ConstructorInvocationFragment : Expression
     {
@@ -28,6 +45,7 @@
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
             this.Class = this.DoTypeLookup(this.ClassName, context);
+            // ResolvedType is set by the FunctionInvocation resolver
             return this;
         }
 

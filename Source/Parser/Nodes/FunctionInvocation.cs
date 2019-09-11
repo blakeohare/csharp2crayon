@@ -36,52 +36,344 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            VerifiedFieldReference vfr = null;
-            if (this.Root is DotField)
-            {
-                vfr = ((DotField)this.Root).ResolveTypesWithoutArgs(context, varScope);
-                this.Root = vfr;
-            }
-            else
-            {
-                this.Root = this.Root.ResolveTypes(context, varScope);
-            }
+            // There can be multiple signatures of methods. Calculate all of them.
+            // Then resolve the args and filter these down to one.
+            // If it's ambiguous or there's no possibilities left, then it's an error.
+            List<Expression> possibleRoots = new List<Expression>();
 
-            List<ResolvedType> argTypes = new List<ResolvedType>();
-            if (vfr != null && this.Args.Length == 1 && this.Args[0] is Lambda)
+            if (this.Root is Variable)
             {
-                ResolvedType resolvedType = vfr.GetEnumerableItemTypeGuess(context);
-                ((Lambda)this.Args[0]).ResolveTypesWithExteriorHint(context, varScope, new ResolvedType[] { resolvedType });
-            }
-            else
-            {
-                for (int i = 0; i < this.Args.Length; ++i)
+                Variable v = (Variable)this.Root;
+                if (varScope.GetVariableType(v.Name.Value) != null)
                 {
-                    this.Args[i] = this.Args[i].ResolveTypes(context, varScope);
-                    argTypes.Add(this.Args[i].ResolvedType);
+                    possibleRoots.Add(this.Root.ResolveTypes(context, varScope));
+                }
+                else
+                {
+                    TopLevelEntity[] entities = this.ClassContainer.GetMember(v.Name.Value);
+
+                    foreach (TopLevelEntity entity in entities)
+                    {
+                        Expression fakeDotFieldRoot = null;
+                        if (entity.IsStatic)
+                        {
+                            fakeDotFieldRoot = new StaticClassReference(this.FirstToken, this.parent, entity.ClassContainer);
+                        }
+                        else
+                        {
+                            fakeDotFieldRoot = new ThisKeyword(this.FirstToken, this.parent);
+                        }
+                        VerifiedFieldReference vfr = new VerifiedFieldReference(this.FirstToken, this.parent, v.Name, fakeDotFieldRoot, null);
+                        if (entity is FieldDefinition)
+                        {
+                            vfr.Field = (FieldDefinition)entity;
+                            vfr.ResolvedType = vfr.Field.ResolvedType;
+                        }
+                        else if (entity is MethodDefinition)
+                        {
+                            vfr.Method = (MethodDefinition)entity;
+                            vfr.ResolvedType = ResolvedType.CreateFunctionPointerType(
+                                vfr.Method.ResolvedReturnType,
+                                vfr.Method.ResolvedArgTypes);
+                        }
+                        else if (entity is PropertyDefinition)
+                        {
+                            vfr.Property = (PropertyDefinition)entity;
+                            vfr.ResolvedType = vfr.Property.ResolvedType;
+                        }
+                        else
+                        {
+                            throw new System.InvalidOperationException();
+                        }
+                        possibleRoots.Add(vfr);
+                    }
                 }
             }
-
-            if (this.Root is VerifiedFieldReference)
+            else if (this.Root is DotField)
             {
-                ((VerifiedFieldReference)this.Root).ResolveFieldReference(context, argTypes.ToArray(), varScope);
-                ResolvedType rootType = this.Root.ResolvedType;
-                if (rootType.FrameworkClass != "System.Func")
+                // Since we know this is a situation where there'll be argument information,
+                // don't let the DotFielda attempt to choose one. Just get all possibilities here.
+                // Resolve the DotField's root for it inline here.
+                DotField df = (DotField)this.Root;
+                df.Root = df.Root.ResolveTypes(context, varScope);
+                ResolvedType rootResolvedType = df.Root.ResolvedType;
+                if (rootResolvedType.CustomType != null && rootResolvedType.CustomType is ClassLikeDefinition)
                 {
-                    throw new ParserException(this.OpenParen, "Cannot invoke this like a function.");
+                    foreach (TopLevelEntity entity in ((ClassLikeDefinition)rootResolvedType.CustomType).GetMember(df.FieldName.Value))
+                    {
+                        VerifiedFieldReference vfr = new VerifiedFieldReference(this.FirstToken, this.parent, df.FieldName, df.Root, null);
+                        if (entity is FieldDefinition)
+                        {
+                            vfr.Field = (FieldDefinition)entity;
+                            vfr.ResolvedType = vfr.Field.ResolvedType;
+                        }
+                        else if (entity is MethodDefinition)
+                        {
+                            vfr.Method = (MethodDefinition)entity;
+                            vfr.ResolvedType = ResolvedType.CreateFunctionPointerType(
+                                vfr.Method.ResolvedReturnType,
+                                vfr.Method.ResolvedArgTypes);
+                        }
+                        else if (entity is PropertyDefinition)
+                        {
+                            vfr.Property = (PropertyDefinition)entity;
+                            vfr.ResolvedType = vfr.Property.ResolvedType;
+                        }
+                        else
+                        {
+                            throw new System.NotImplementedException();
+                        }
+                        possibleRoots.Add(vfr);
+                    }
                 }
-                this.ResolvedType = rootType.Generics[rootType.Generics.Length - 1];
+                else if (rootResolvedType.FrameworkClass != null)
+                {
+                    if (this.FileContext.HasLinq && rootResolvedType.IsEnumerable(context))
+                    {
+                        ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                        switch (df.FieldName.Value)
+                        {
+                            case "OrderBy":
+                                {
+                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
+                                         ResolvedType.CreateEnumerableType(itemType),
+                                         ResolvedType.CreateFunctionPointerType(
+                                             ResolvedType.Object(),
+                                             itemType))));
+                                }
+                                break;
+
+                            case "ToArray":
+                                {
+                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                        ResolvedType.CreateArray(itemType))));
+                                }
+                                break;
+
+                            case "Select": throw new System.NotImplementedException();
+                            case "Where": throw new System.NotImplementedException();
+                            case "OfType": throw new System.NotImplementedException();
+                            case "Cast": throw new System.NotImplementedException();
+                            default: break;
+                        }
+                    }
+
+                    if (rootResolvedType.IsIList(context))
+                    {
+                        throw new System.NotImplementedException();
+                    }
+
+                    if (rootResolvedType.IsIDictionary(context))
+                    {
+                        throw new System.NotImplementedException();
+                    }
+
+                    if (possibleRoots.Count == 0)
+                    {
+                        // something else that isn't linq, a list, or dictionary
+                        throw new System.NotImplementedException();
+                    }
+                }
+                else if (rootResolvedType.PrimitiveType != null)
+                {
+                    switch (rootResolvedType.PrimitiveType + "." + df.FieldName)
+                    {
+                        case "string.Join":
+                            throw new System.NotImplementedException();
+                        case "string.ToLowerInvariant":
+                            possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String())));
+                            break;
+                        default:
+                            throw new System.NotImplementedException();
+                    }
+                }
+                else
+                {
+                    throw new System.NotImplementedException();
+                }
             }
             else if (this.Root is ConstructorInvocationFragment)
             {
-                this.RootAsConstructor.ResolveTypesForInitialData(context, varScope);
-                this.ResolvedType = this.RootAsConstructor.Class;
+                ConstructorInvocationFragment cif = (ConstructorInvocationFragment)this.Root;
+                cif = (ConstructorInvocationFragment)cif.ResolveTypes(context, varScope);
+
+                ClassDefinition cd = cif.Class.CustomType as ClassDefinition;
+                if (cd != null)
+                {
+                    this.ResolvedType = cif.Class;
+                    foreach (ConstructorDefinition ctor in cd.Members.OfType<ConstructorDefinition>())
+                    {
+                        Expression cifw = new ConstructorInvocationFragmentWrapper(cif);
+                        cifw.ResolvedType = ResolvedType.CreateFunctionPointerType(cif.Class, ctor.ResolvedArgTypes);
+                        possibleRoots.Add(cifw);
+                    }
+                }
+                else if (cif.Class.FrameworkClass != null)
+                {
+                    if (!FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES.ContainsKey(cif.Class.FrameworkClass))
+                    {
+                        // There's generics. Single out List and Dictionary.
+                        if (cif.Class.FrameworkClass == "System.Collections.Generic.List")
+                        {
+                            throw new System.NotImplementedException();
+                        }
+                        else if (cif.Class.FrameworkClass == "System.Collections.Generic.Dictionary")
+                        {
+                            throw new System.NotImplementedException();
+                        }
+                        else
+                        {
+                            throw new ParserException(cif.FirstToken, "Cannot find this framework class: " + cif.Class.FrameworkClass);
+                        }
+                    }
+
+                    foreach (ResolvedType funcType in FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES[cif.Class.FrameworkClass])
+                    {
+                        possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif) { ResolvedType = funcType });
+                    }
+                }
             }
             else
             {
                 throw new System.NotImplementedException();
             }
-            return this;
+
+            List<Expression> possibleFunctionRoots = new List<Expression>();
+            List<Expression> filtered = new List<Expression>();
+            foreach (Expression possibleRoot in possibleRoots)
+            {
+                if (possibleRoot.ResolvedType.FrameworkClass != "System.Func")
+                {
+                    throw new ParserException(this.OpenParen, "This type can't be invoked like a function.");
+                }
+
+                if (possibleRoot.ResolvedType.Generics.Length == this.Args.Length + 1)
+                {
+                    filtered.Add(possibleRoot);
+                }
+            }
+            possibleFunctionRoots = filtered;
+            if (possibleFunctionRoots.Count == 0) throw new ParserException(this.FirstToken, "Could not resolve this function");
+
+            List<ResolvedType> argTypes = new List<ResolvedType>();
+
+            for (int i = 0; i < this.Args.Length; ++i)
+            {
+                Expression arg = this.Args[i];
+
+                if (arg is Lambda)
+                {
+                    Lambda lambda = (Lambda)arg;
+                    List<ResolvedType[]> expectedArgTypes = new List<ResolvedType[]>();
+                    for (int j = 0; j < possibleFunctionRoots.Count; ++j)
+                    {
+                        ResolvedType expectedArgType = possibleFunctionRoots[j].ResolvedType.Generics[i];
+                        if (expectedArgType.PrimitiveType == "object")
+                        {
+                            throw new ParserException(arg.FirstToken, "Trying to pass in a lambda with no type information in its args into a method that takes in an object, so I can't actually determine what types these args are supposed to be.");
+                        }
+                        if (expectedArgType.FrameworkClass != "System.Func")
+                        {
+                            possibleFunctionRoots.RemoveAt(j); // no longer consider this as a possible combination
+                            --j;
+                            continue;
+                        }
+                        List<ResolvedType> expectedLambdaArgTypes = new List<ResolvedType>(expectedArgType.Generics);
+                        if (expectedLambdaArgTypes.Count - 1 != lambda.Args.Length)
+                        {
+                            possibleFunctionRoots.RemoveAt(j);
+                            --j;
+                            continue;
+                        }
+                        expectedArgTypes.Add(expectedLambdaArgTypes.ToArray());
+                    }
+
+                    if (expectedArgTypes.Count == 1)
+                    {
+                        arg = ((Lambda)arg).ResolveTypesWithExteriorHint(context, varScope, expectedArgTypes[0]);
+                    }
+                    else
+                    {
+                        // TODO: check to see if all the possible expected arg types are the same, in which case it should be treated as just 1
+                        throw new ParserException(this.OpenParen, "This function invocation is ambiguous. Multiplie lambdas apply");
+                    }
+                }
+                else
+                {
+                    arg = arg.ResolveTypes(context, varScope);
+                }
+                this.Args[i] = arg;
+                argTypes.Add(this.Args[i].ResolvedType);
+            }
+
+            foreach (Expression possibleRoot in possibleFunctionRoots)
+            {
+                ResolvedType[] expectedArgTypes = possibleRoot.ResolvedType.Generics; // has an extra type at the end for the return type but since we're looping through the args length, this won't be an issue
+                bool isMatch = true;
+                for (int i = 0; i < this.Args.Length; ++i)
+                {
+                    if (!this.Args[i].ResolvedType.CanBeAssignedTo(expectedArgTypes[i], context))
+                    {
+                        isMatch = false;
+                        break;
+                    }
+                }
+
+                if (isMatch)
+                {
+                    this.Root = possibleRoot;
+                    if (this.Root is ConstructorInvocationFragmentWrapper)
+                    {
+                        ConstructorInvocationFragmentWrapper cifw = (ConstructorInvocationFragmentWrapper)this.Root;
+                        this.Root = cifw.InnerFragment;
+                        this.Root.ResolvedType = cifw.ResolvedType;
+                        cifw.InnerFragment.ResolveTypesForInitialData(context, varScope);
+                    }
+                    ResolvedType funcType = this.Root.ResolvedType;
+                    this.ResolvedType = funcType.Generics[funcType.Generics.Length - 1];
+                    return this;
+                }
+            }
+
+            throw new ParserException(this.OpenParen, "No acceptable function signature could be found to match the args.");
         }
+
+        private static VerifiedFieldReference ConvertDfToLinqVfr(DotField df, ResolvedType type)
+        {
+            VerifiedFieldReference vfr = ConvertDfToVfr(df, type);
+            vfr.Type = MethodRefType.LINQ;
+            return vfr;
+        }
+
+        private static VerifiedFieldReference ConvertDfToVfr(DotField df, ResolvedType type)
+        {
+            VerifiedFieldReference vfr = new VerifiedFieldReference(df.FirstToken, df.Parent, df.FieldName, df.Root, null);
+            vfr.ResolvedType = type;
+            return vfr;
+        }
+
+        private static ResolvedType CreateConstructorFuncWithArgs(string className, params ResolvedType[] argTypes)
+        {
+            return ResolvedType.CreateFunctionPointerType(
+                ResolvedType.CreateFrameworkType(className),
+                argTypes);
+        }
+
+        private static readonly Dictionary<string, ResolvedType[]> FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES = new Dictionary<string, ResolvedType[]>() {
+            {
+                "System.Exception",
+                new ResolvedType[] {
+                    CreateConstructorFuncWithArgs("System.Exception"),
+                    CreateConstructorFuncWithArgs("System.Exception", ResolvedType.String())
+                }
+            },
+            {
+                "System.NotImplementedException",
+                new ResolvedType[] {
+                    CreateConstructorFuncWithArgs("System.NotImplementedException"),
+                    CreateConstructorFuncWithArgs("System.NotImplementedException", ResolvedType.String()),
+                }
+            },
+        };
     }
 }

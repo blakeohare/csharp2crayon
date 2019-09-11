@@ -42,6 +42,16 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public TopLevelEntity Parent { get; private set; }
 
+        public ClassLikeDefinition ClassContainer
+        {
+            get
+            {
+                if (this.Parent == null) return null;
+                if (this.Parent is ClassLikeDefinition) return (ClassLikeDefinition) this.Parent;
+                return this.Parent.ClassContainer;
+            }
+        }
+
         private string fullyQualifiedName = null;
         public string FullyQualifiedName
         {

@@ -25,17 +25,17 @@ namespace CSharp2Crayon.Parser.Nodes
         public Expression ResolveTypesWithExteriorHint(
             ParserContext context,
             VariableScope varScope,
-            ResolvedType[] expectedArgsTypes)
+            ResolvedType[] expectedArgsAndReturnTypes)
         {
             VariableScope lambdaScope = new VariableScope(varScope);
-            if (this.Args.Length != expectedArgsTypes.Length)
+            if (this.Args.Length != expectedArgsAndReturnTypes.Length - 1)
             {
-                throw new ParserException(this.ArrowToken, "The expected number of args was " + expectedArgsTypes.Length);
+                throw new ParserException(this.ArrowToken, "The expected number of args was " + (expectedArgsAndReturnTypes.Length - 1));
             }
 
             for (int i = 0; i < this.Args.Length; ++i)
             {
-                lambdaScope.DeclareVariable(this.Args[i].Value, expectedArgsTypes[i]);
+                lambdaScope.DeclareVariable(this.Args[i].Value, expectedArgsAndReturnTypes[i]);
             }
 
             this.Code = Executable.ResolveTypesForCode(this.Code, context, lambdaScope);
@@ -58,7 +58,15 @@ namespace CSharp2Crayon.Parser.Nodes
                 throw new ParserException(this.FirstToken, "Not implemented: the return is hiding in this lambda.");
             }
 
-            this.ResolvedType = ResolvedType.CreateFunctionPointerType(returnType, expectedArgsTypes);
+            ResolvedType expectedReturnType = expectedArgsAndReturnTypes[expectedArgsAndReturnTypes.Length - 1];
+            if (!returnType.CanBeAssignedTo(expectedReturnType, context))
+            {
+                throw new ParserException(this.FirstToken, "This lambda does not seem to be returning the expected type.");
+            }
+            List<ResolvedType> argTypes = new List<ResolvedType>(expectedArgsAndReturnTypes);
+            argTypes.RemoveAt(argTypes.Count - 1);
+
+            this.ResolvedType = ResolvedType.CreateFunctionPointerType(expectedReturnType, argTypes.ToArray());
             return this;
         }
     }

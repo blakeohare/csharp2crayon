@@ -4,8 +4,10 @@
     {
         protected TopLevelEntity parent;
 
+        public TopLevelEntity Parent { get { return this.parent; } }
         public ResolvedType ResolvedType { get; internal set; }
         public FileContext FileContext { get { return this.parent.FileContext; } }
+        public ClassLikeDefinition ClassContainer { get { return this.parent.ClassContainer; } }
 
         public Expression(Token firstToken, TopLevelEntity parent)
             : base(firstToken)

@@ -4,6 +4,20 @@ using System.Linq;
 
 namespace CSharp2Crayon.Parser.Nodes
 {
+    public enum MethodRefType
+    {
+        UNKNOWN,
+
+        LINQ,
+        FIELD,
+        STATIC_FIELD,
+        METHOD,
+        STATIC_METHOD,
+        FRAMEWORK_METHOD,
+        STATIC_FRAMEWORK_METHOD,
+        STRING_METHOD,
+        PRIMITIVE_METHOD,
+    }
 
     public class VerifiedFieldReference : Expression
     {
@@ -11,28 +25,14 @@ namespace CSharp2Crayon.Parser.Nodes
         public Expression RootValue { get; private set; }
         public ResolvedType StaticMethodSource { get; private set; }
 
-        public MethodDefinition Method { get; private set; }
-        public FieldDefinition Field { get; private set; }
-        public PropertyDefinition Property { get; private set; }
+        public MethodDefinition Method { get; internal set; }
+        public FieldDefinition Field { get; internal set; }
+        public PropertyDefinition Property { get; internal set; }
         public string PrimitiveMethod { get; private set; } // primitiveType.FieldName
         // TODO: add a FrameworkMethod class
 
-        private MethodRefType type = MethodRefType.UNKNOWN;
+        public MethodRefType Type { get; internal set; }
 
-        private enum MethodRefType
-        {
-            UNKNOWN,
-
-            LINQ,
-            FIELD,
-            STATIC_FIELD,
-            METHOD,
-            STATIC_METHOD,
-            FRAMEWORK_METHOD,
-            STATIC_FRAMEWORK_METHOD,
-            STRING_METHOD,
-            PRIMITIVE_METHOD,
-        }
 
         public VerifiedFieldReference(
             Token firstToken,
@@ -45,7 +45,7 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Name = methodName;
             this.RootValue = root;
             this.StaticMethodSource = staticMethodSource;
-            this.type = MethodRefType.UNKNOWN;
+            this.Type = MethodRefType.UNKNOWN;
         }
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
@@ -99,7 +99,7 @@ namespace CSharp2Crayon.Parser.Nodes
                 ResolvedType rootType = this.RootValue.ResolvedType;
                 if (this.FileContext.HasLinq && rootType.IsEnumerable(context))
                 {
-                    this.type = MethodRefType.LINQ;
+                    this.Type = MethodRefType.LINQ;
                     switch (this.Name.Value)
                     {
                         case "OrderBy":
@@ -125,10 +125,10 @@ namespace CSharp2Crayon.Parser.Nodes
                         case "Select": throw new System.NotImplementedException();
                         case "Where": throw new System.NotImplementedException();
                         default:
-                            this.type = MethodRefType.UNKNOWN;
+                            this.Type = MethodRefType.UNKNOWN;
                             break;
                     }
-                    if (this.type == MethodRefType.LINQ)
+                    if (this.Type == MethodRefType.LINQ)
                     {
                         return;
                     }
@@ -151,7 +151,7 @@ namespace CSharp2Crayon.Parser.Nodes
                 }
                 else if (rootType.PrimitiveType != null)
                 {
-                    this.type = MethodRefType.PRIMITIVE_METHOD;
+                    this.Type = MethodRefType.PRIMITIVE_METHOD;
                     this.PrimitiveMethod = rootType.PrimitiveType + "." + this.Name.Value;
 
                     switch (this.PrimitiveMethod)
@@ -208,14 +208,16 @@ namespace CSharp2Crayon.Parser.Nodes
         {
             string className = this.RootValue.ResolvedType.FrameworkClass;
             string methodName = this.Name.Value;
+            this.Type = MethodRefType.FRAMEWORK_METHOD;
             switch (className + ":" + methodName)
             {
                 case "System.Collections.Generic.HashSet:Contains":
-                    throw new System.NotImplementedException();
+                    ResolvedType itemType = this.RootValue.ResolvedType.Generics[0];
+                    this.ResolvedType = ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), new ResolvedType[] { itemType });
+                    return;
                 default:
                     throw new System.NotImplementedException();
             }
-            throw new ParserException(this.FirstToken, "Not implemented");
         }
 
         private void ResolveFrameworkStaticMethodReference(ResolvedType[] argTypes)

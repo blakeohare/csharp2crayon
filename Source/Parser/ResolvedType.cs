@@ -41,6 +41,74 @@ namespace CSharp2Crayon.Parser
             throw new System.NotImplementedException();
         }
 
+        public override string ToString()
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            ToStringImpl(sb);
+            return sb.ToString();
+        }
+
+        private void ToStringImpl(System.Text.StringBuilder sb)
+        {
+            if (this.IsArray)
+            {
+                this.Generics[0].ToStringImpl(sb);
+                sb.Append("[]");
+                return;
+            }
+
+            if (this.IsNullable)
+            {
+                this.Generics[0].ToStringImpl(sb);
+                sb.Append("?");
+                return;
+            }
+
+            if (this.FrameworkClass != null)
+            {
+                sb.Append(this.FrameworkClass);
+            }
+            else if (this.PrimitiveType != null)
+            {
+                sb.Append(this.PrimitiveType);
+            }
+            else if (this.CustomType != null)
+            {
+                sb.Append(this.CustomType.FullyQualifiedName);
+            }
+
+            if (this.Generics.Length > 0)
+            {
+                sb.Append("<");
+                for (int i = 0; i < this.Generics.Length; ++i)
+                {
+                    if (i > 0) sb.Append(", ");
+                    this.Generics[i].ToStringImpl(sb);
+                }
+                sb.Append(">");
+            }
+        }
+
+        public bool IsIList(ParserContext ctx)
+        {
+            if (this.Generics.Length != 1) return false;
+            if (this.FrameworkClass != null)
+            {
+                return ResolvedType.IsXASubclassOfY(this.FrameworkClass, "System.Collections.Generic.IList", ctx);
+            }
+            return false;
+        }
+
+        public bool IsIDictionary(ParserContext ctx)
+        {
+            if (this.Generics.Length != 2) return false;
+            if (this.FrameworkClass != null)
+            {
+                return ResolvedType.IsXASubclassOfY(this.FrameworkClass, "System.Collections.Generic.IDictionary", ctx);
+            }
+            return false;
+        }
+
         public ResolvedType GetEnumerableItemType()
         {
             if (this.IsArray) return this.Generics[0];
@@ -54,6 +122,15 @@ namespace CSharp2Crayon.Parser
             }
 
             throw new System.NotImplementedException();
+        }
+
+        public static ResolvedType FromClass(ClassLikeDefinition cd)
+        {
+            return new ResolvedType()
+            {
+                CustomType = cd,
+                Generics = EMPTY_GENERICS,
+            };
         }
 
         private static readonly Dictionary<string, ResolvedType> primitiveCache = new Dictionary<string, ResolvedType>();
@@ -71,6 +148,7 @@ namespace CSharp2Crayon.Parser
         public static ResolvedType String() { return GetPrimitiveType("string"); }
         public static ResolvedType Int() { return GetPrimitiveType("int"); }
         public static ResolvedType Bool() { return GetPrimitiveType("bool"); }
+        public static ResolvedType Object() { return GetPrimitiveType("object"); }
 
         public static ResolvedType CreateArray(ResolvedType itemType)
         {
@@ -81,6 +159,15 @@ namespace CSharp2Crayon.Parser
             };
         }
 
+        public static ResolvedType CreateFunction(ResolvedType returnType)
+        {
+            return new ResolvedType()
+            {
+                FrameworkClass = "System.Func",
+                Generics = new ResolvedType[] { returnType },
+            };
+        }
+
         public static ResolvedType CreateFunctionPointerType(ResolvedType returnType, ResolvedType[] args)
         {
             List<ResolvedType> generics = new List<ResolvedType>(args);
@@ -88,6 +175,15 @@ namespace CSharp2Crayon.Parser
             return new ResolvedType() {
                  FrameworkClass = "System.Func",
                  Generics = generics.ToArray(),
+            };
+        }
+
+        public static ResolvedType CreateFunctionPointerType(ResolvedType returnType, ResolvedType singleArgumentType)
+        {
+            return new ResolvedType()
+            {
+                FrameworkClass = "System.Func",
+                Generics = new ResolvedType[] { singleArgumentType, returnType },
             };
         }
 
@@ -107,6 +203,15 @@ namespace CSharp2Crayon.Parser
                 Generics = EMPTY_GENERICS,
                 PrimitiveType = "null",
                 IsNull = true
+            };
+        }
+
+        public static ResolvedType CreateFrameworkType(string name)
+        {
+            return new ResolvedType()
+            {
+                Generics = EMPTY_GENERICS,
+                FrameworkClass = name,
             };
         }
 
