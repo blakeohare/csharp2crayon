@@ -215,6 +215,17 @@ namespace CSharp2Crayon.Parser.Nodes
                     ResolvedType itemType = this.RootValue.ResolvedType.Generics[0];
                     this.ResolvedType = ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), new ResolvedType[] { itemType });
                     return;
+
+                case "System.Collections.Generic.Dictionary:Keys":
+                    ResolvedType keyType = this.RootValue.ResolvedType.Generics[0];
+                    this.ResolvedType = ResolvedType.CreateEnumerableType(keyType);
+                    return;
+
+                case "System.Collections.Generic.Dictionary:Values":
+                    ResolvedType valueType = this.RootValue.ResolvedType.Generics[1];
+                    this.ResolvedType = ResolvedType.CreateEnumerableType(valueType);
+                    return;
+
                 default:
                     throw new System.NotImplementedException();
             }

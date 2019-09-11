@@ -59,10 +59,18 @@ namespace CSharp2Crayon.Parser.Nodes
             }
 
             ResolvedType expectedReturnType = expectedArgsAndReturnTypes[expectedArgsAndReturnTypes.Length - 1];
-            if (!returnType.CanBeAssignedTo(expectedReturnType, context))
+            if (expectedReturnType == null)
             {
-                throw new ParserException(this.FirstToken, "This lambda does not seem to be returning the expected type.");
+                expectedReturnType = returnType;
             }
+            else
+            {
+                if (!returnType.CanBeAssignedTo(expectedReturnType, context))
+                {
+                    throw new ParserException(this.FirstToken, "This lambda does not seem to be returning the expected type.");
+                }
+            }
+
             List<ResolvedType> argTypes = new List<ResolvedType>(expectedArgsAndReturnTypes);
             argTypes.RemoveAt(argTypes.Count - 1);
 

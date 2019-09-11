@@ -126,52 +126,180 @@ namespace CSharp2Crayon.Parser.Nodes
                         possibleRoots.Add(vfr);
                     }
                 }
-                else if (rootResolvedType.FrameworkClass != null)
+                else if (rootResolvedType.FrameworkClass != null || rootResolvedType.IsArray)
                 {
-                    if (this.FileContext.HasLinq && rootResolvedType.IsEnumerable(context))
+                    if (rootResolvedType.IsEnumerable(context))
+                    {
+                        ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                        if (this.FileContext.HasLinq)
+                        {
+                            switch (df.FieldName.Value)
+                            {
+                                case "OrderBy":
+                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
+                                            ResolvedType.CreateEnumerableType(itemType),
+                                            ResolvedType.CreateFunctionPointerType(
+                                                ResolvedType.Object(),
+                                                itemType))));
+                                    break;
+
+                                case "ToArray":
+                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                        ResolvedType.CreateArray(itemType))));
+                                    break;
+
+                                case "Select":
+                                    CSharpType[] inlineTypes = df.InlineTypeSpecification;
+                                    if (inlineTypes == null)
+                                    {
+                                        // null means retroactively apply the return type of the function
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
+                                            ResolvedType.CreateEnumerableType(itemType),
+                                            ResolvedType.CreateFunctionPointerType(null, itemType))));
+                                    }
+                                    else
+                                    {
+                                        if (inlineTypes.Length != 2)
+                                        {
+                                            throw new ParserException(df.FieldName, "Linq's .Select needs 2 inline types.");
+                                        }
+
+                                        ResolvedType[] resolvedInlineTypes = inlineTypes
+                                            .Select(it => this.DoTypeLookup(it, context))
+                                            .ToArray();
+
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
+                                            ResolvedType.CreateEnumerableType(itemType),
+                                            ResolvedType.CreateFunctionPointerType(resolvedInlineTypes[1], resolvedInlineTypes[0]))));
+                                    }
+                                    break;
+
+                                case "Where": throw new System.NotImplementedException();
+                                case "OfType": throw new System.NotImplementedException();
+                                case "Cast": throw new System.NotImplementedException();
+                                default: break;
+                            }
+                        }
+                    }
+
+                    switch (rootResolvedType.FrameworkClass)
+                    {
+                        case "System.Text.StringBuilder":
+                            {
+                                switch (df.FieldName.Value)
+                                {
+                                    case "Append":
+                                        possibleRoots.Add(ConvertDfToVfr(df,
+                                            ResolvedType.CreateFunctionPointerType(ResolvedType.Void(), ResolvedType.Object())));
+                                        break;
+                                }
+                            }
+                            break;
+
+                        case "System.Collections.Generic.Stack":
+                            {
+                                ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                                switch (df.FieldName.Value)
+                                {
+                                    case "Push":
+                                        possibleRoots.Add(ConvertDfToVfr(df,
+                                            ResolvedType.CreateFunctionPointerType(ResolvedType.Void(), itemType)));
+                                        break;
+
+                                    case "Pop":
+                                        possibleRoots.Add(ConvertDfToVfr(df,
+                                            ResolvedType.CreateFunction(itemType)));
+                                        break;
+                                }
+                            }
+                            break;
+
+                        case "System.Collections.Generic.HashSet":
+                            {
+                                ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                                switch (df.FieldName.Value)
+                                {
+                                    case "Remove":
+                                        possibleRoots.Add(ConvertDfToVfr(df,
+                                            ResolvedType.CreateFunctionPointerType(ResolvedType.Void(), itemType)));
+                                        break;
+
+                                    default: break;
+                                }
+                            }
+                            break;
+                    }
+
+                    if (rootResolvedType.IsICollection(context))
                     {
                         ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
                         switch (df.FieldName.Value)
                         {
-                            case "OrderBy":
-                                {
-                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
-                                         ResolvedType.CreateEnumerableType(itemType),
-                                         ResolvedType.CreateFunctionPointerType(
-                                             ResolvedType.Object(),
-                                             itemType))));
-                                }
+                            case "Add":
+                                possibleRoots.Add(ConvertDfToVfr(df,
+                                    ResolvedType.CreateFunctionPointerType(ResolvedType.Void(), itemType)));
                                 break;
 
-                            case "ToArray":
-                                {
-                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
-                                        ResolvedType.CreateArray(itemType))));
-                                }
+                            case "Clear":
+                                possibleRoots.Add(ConvertDfToVfr(df,
+                                    ResolvedType.CreateFunction(ResolvedType.Void())));
                                 break;
 
-                            case "Select": throw new System.NotImplementedException();
-                            case "Where": throw new System.NotImplementedException();
-                            case "OfType": throw new System.NotImplementedException();
-                            case "Cast": throw new System.NotImplementedException();
-                            default: break;
+                            case "Contains":
+                                possibleRoots.Add(ConvertDfToVfr(df,
+                                    ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), itemType)));
+                                break;
+
                         }
                     }
 
                     if (rootResolvedType.IsIList(context))
                     {
-                        throw new System.NotImplementedException();
+                        ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                        switch (df.FieldName.Value)
+                        {
+                            default: break;
+                        }
                     }
 
                     if (rootResolvedType.IsIDictionary(context))
                     {
-                        throw new System.NotImplementedException();
+                        ResolvedType keyType = rootResolvedType.Generics[0];
+                        ResolvedType valueType = rootResolvedType.Generics[1];
+                        switch (df.FieldName.Value)
+                        {
+                            case "Clear":
+                                possibleRoots.Add(ConvertDfToVfr(df,
+                                    ResolvedType.CreateFunction(ResolvedType.Void())));
+                                break;
+
+                            case "ContainsKey":
+                                possibleRoots.Add(ConvertDfToVfr(df,
+                                    ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), keyType)));
+                                break;
+
+                            case "ContainsValue":
+                                possibleRoots.Add(ConvertDfToVfr(df,
+                                    ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), valueType)));
+                                break;
+
+                            default: break;
+                        }
+                    }
+
+                    switch (df.FieldName.Value)
+                    {
+                        case "ToString": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String()))); break;
+                        case "Equals": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), ResolvedType.Object()))); break;
+                        case "GetHashCode": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.Int()))); break;
+                        case "GetType": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.CreateFrameworkType("System.Type")))); break;
                     }
 
                     if (possibleRoots.Count == 0)
                     {
+                        string rootType = df.Root.ResolvedType.ToString();
                         // something else that isn't linq, a list, or dictionary
-                        throw new System.NotImplementedException();
+                        throw new System.NotImplementedException("Method name: " + df.FieldName.Value);
                     }
                 }
                 else if (rootResolvedType.PrimitiveType != null)
@@ -180,6 +308,7 @@ namespace CSharp2Crayon.Parser.Nodes
                     {
                         case "string.Join":
                             throw new System.NotImplementedException();
+                        case "string.ToLower":
                         case "string.ToLowerInvariant":
                             possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String())));
                             break;
@@ -210,26 +339,59 @@ namespace CSharp2Crayon.Parser.Nodes
                 }
                 else if (cif.Class.FrameworkClass != null)
                 {
-                    if (!FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES.ContainsKey(cif.Class.FrameworkClass))
+                    if (FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES.ContainsKey(cif.Class.FrameworkClass))
                     {
-                        // There's generics. Single out List and Dictionary.
-                        if (cif.Class.FrameworkClass == "System.Collections.Generic.List")
+                        foreach (ResolvedType funcType in FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES[cif.Class.FrameworkClass])
                         {
-                            throw new System.NotImplementedException();
-                        }
-                        else if (cif.Class.FrameworkClass == "System.Collections.Generic.Dictionary")
-                        {
-                            throw new System.NotImplementedException();
-                        }
-                        else
-                        {
-                            throw new ParserException(cif.FirstToken, "Cannot find this framework class: " + cif.Class.FrameworkClass);
+                            possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif) { ResolvedType = funcType });
                         }
                     }
-
-                    foreach (ResolvedType funcType in FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES[cif.Class.FrameworkClass])
+                    else
                     {
-                        possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif) { ResolvedType = funcType });
+                        ResolvedType[] generics = cif.Class.Generics;
+                        // There's generics. Single out the collection types.
+                        switch (cif.Class.FrameworkClass)
+                        {
+                            case "System.Collections.Generic.List":
+                            case "System.Collections.Generic.Stack":
+                            case "System.Collections.Generic.Queue":
+                            case "System.Collections.Generic.HashSet":
+                                // collection with 1 generic
+
+                                // Create an empty collection
+                                possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif)
+                                {
+                                    ResolvedType = ResolvedType.CreateFunction(cif.Class),
+                                });
+
+                                // Create a collection with an enumerable
+                                possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif)
+                                {
+                                    ResolvedType = ResolvedType.CreateFunctionPointerType(cif.Class, ResolvedType.CreateEnumerableType(generics[0]))
+                                });
+
+                                // Create a collection with default capacity
+                                possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif)
+                                {
+                                    ResolvedType = ResolvedType.CreateFunctionPointerType(cif.Class, ResolvedType.Int()),
+                                });
+
+                                break;
+
+                            case "System.Collections.Generic.Dictionary":
+                                // collection with 2 generics
+                                possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif) {
+                                    ResolvedType = ResolvedType.CreateFunction(cif.Class)
+                                });
+                                if (this.Args.Length == 1)
+                                {
+                                    throw new System.NotImplementedException();
+                                }
+                                break;
+
+                            default:
+                                throw new ParserException(cif.FirstToken, "Cannot find this framework class: " + cif.Class.FrameworkClass);
+                        }
                     }
                 }
             }
@@ -290,7 +452,16 @@ namespace CSharp2Crayon.Parser.Nodes
 
                     if (expectedArgTypes.Count == 1)
                     {
+                        ResolvedType[] expectedArgTypesWinner = expectedArgTypes[0];
+
                         arg = ((Lambda)arg).ResolveTypesWithExteriorHint(context, varScope, expectedArgTypes[0]);
+                        // If the outgoing return type is not known, then scrape it from the resolved lambda, which
+                        // is now aware of its own return type from within the code.
+                        if (expectedArgTypesWinner[expectedArgTypesWinner.Length - 1] == null)
+                        {
+                            expectedArgTypesWinner[expectedArgTypesWinner.Length - 1] =
+                                arg.ResolvedType.Generics[arg.ResolvedType.Generics.Length - 1];
+                        }
                     }
                     else
                     {
@@ -359,19 +530,22 @@ namespace CSharp2Crayon.Parser.Nodes
                 argTypes);
         }
 
+        private static ResolvedType[] CreateStandardExceptionConstructor(string name)
+        {
+            return new ResolvedType[] {
+                CreateConstructorFuncWithArgs(name),
+                CreateConstructorFuncWithArgs(name, ResolvedType.String())
+            };
+        }
+
         private static readonly Dictionary<string, ResolvedType[]> FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES = new Dictionary<string, ResolvedType[]>() {
+            { "System.Exception", CreateStandardExceptionConstructor("System.Exception") },
+            { "System.NotImplementedException", CreateStandardExceptionConstructor("System.NotImplementedException") },
+            { "System.InvalidOperationException", CreateStandardExceptionConstructor("System.InvalidOperationException") },
             {
-                "System.Exception",
+                "System.Text.StringBuilder",
                 new ResolvedType[] {
-                    CreateConstructorFuncWithArgs("System.Exception"),
-                    CreateConstructorFuncWithArgs("System.Exception", ResolvedType.String())
-                }
-            },
-            {
-                "System.NotImplementedException",
-                new ResolvedType[] {
-                    CreateConstructorFuncWithArgs("System.NotImplementedException"),
-                    CreateConstructorFuncWithArgs("System.NotImplementedException", ResolvedType.String()),
+                    CreateConstructorFuncWithArgs("System.Text.StringBuilder"),
                 }
             },
         };

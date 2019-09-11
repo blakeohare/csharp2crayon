@@ -56,7 +56,7 @@ namespace CSharp2Crayon.Parser
             if (variableDeclarationType != null)
             {
                 Token variableName = tokens.PopWordIfPresent();
-                if (tokens.IsNext(";") || tokens.IsNext("=") || tokens.IsNext(","))
+                if (variableName != null && (tokens.IsNext(";") || tokens.IsNext("=") || tokens.IsNext(",")))
                 {
                     // This is a variable declaration.
                     Executable varDecl = ParseVariableDeclaration(context, tokens, variableDeclarationType, variableName, parent);

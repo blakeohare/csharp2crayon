@@ -19,6 +19,11 @@ namespace CSharp2Crayon.Parser.Nodes
             TopLevelEntity parent)
             : base(firstToken, parent)
         {
+
+            if (this.FirstToken.File.Contains("AssemblyDependencyResolver.cs") && this.FirstToken.Line == 53)
+            {
+
+            }
             this.VariableName = variableName;
             this.Type = variableType;
             this.AssignmentToken = assignmentToken;

@@ -18,7 +18,15 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            this.ValueExpression = this.ValueExpression.ResolveTypes(context, varScope);
+            this.TargetExpression = this.TargetExpression.ResolveTypes(context, varScope);
+
+            if (!this.ValueExpression.ResolvedType.CanBeAssignedTo(this.TargetExpression.ResolvedType, context))
+            {
+                throw new ParserException(this.AssignmentOp, "Cannot assign a " + this.ValueExpression.ToString() + " to a " + this.TargetExpression.ResolvedType.ToString());
+            }
+
+            return Listify(this);
         }
     }
 }

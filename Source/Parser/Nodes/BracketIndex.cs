@@ -16,7 +16,31 @@
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            this.Root = this.Root.ResolveTypes(context, varScope);
+            this.Index = this.Index.ResolveTypes(context, varScope);
+
+            ResolvedType rootType = this.Root.ResolvedType;
+            ResolvedType indexType = this.Index.ResolvedType;
+            if (rootType.IsArray)
+            {
+                if (indexType.PrimitiveType != "int") throw new ParserException(this.Index.FirstToken, "Array index must be an integer.");
+
+                this.ResolvedType = rootType.Generics[0];
+            }
+            else if (rootType.IsIDictionary(context))
+            {
+                if (!indexType.CanBeAssignedTo(rootType.Generics[0], context))
+                {
+                    throw new ParserException(this.Index.FirstToken, "Incorrect key type.");
+                }
+                this.ResolvedType = rootType.Generics[1];
+            }
+            else
+            {
+                throw new System.NotImplementedException();
+            }
+
+            return this;
         }
     }
 }

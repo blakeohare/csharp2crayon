@@ -89,6 +89,16 @@ namespace CSharp2Crayon.Parser
             }
         }
 
+        public bool IsICollection(ParserContext ctx)
+        {
+            if (this.Generics.Length != 1) return false;
+            if (this.FrameworkClass != null)
+            {
+                return ResolvedType.IsXASubclassOfY(this.FrameworkClass, "System.Collections.Generic.ICollection", ctx);
+            }
+            return false;
+        }
+
         public bool IsIList(ParserContext ctx)
         {
             if (this.Generics.Length != 1) return false;
@@ -114,6 +124,9 @@ namespace CSharp2Crayon.Parser
             if (this.IsArray) return this.Generics[0];
             switch (this.FrameworkClass)
             {
+                case "System.Collections.Generic.HashSet":
+                case "System.Collections.Generic.Stack":
+                case "System.Collections.Generic.Queue":
                 case "System.Collections.Generic.List":
                 case "System.Collections.Generic.IList":
                 case "System.Collections.Generic.ICollection":
@@ -149,6 +162,7 @@ namespace CSharp2Crayon.Parser
         public static ResolvedType Int() { return GetPrimitiveType("int"); }
         public static ResolvedType Bool() { return GetPrimitiveType("bool"); }
         public static ResolvedType Object() { return GetPrimitiveType("object"); }
+        public static ResolvedType Void() { ResolvedType t = GetPrimitiveType("void"); t.IsVoid = true; return t; }
 
         public static ResolvedType CreateArray(ResolvedType itemType)
         {
@@ -172,9 +186,10 @@ namespace CSharp2Crayon.Parser
         {
             List<ResolvedType> generics = new List<ResolvedType>(args);
             generics.Add(returnType);
-            return new ResolvedType() {
-                 FrameworkClass = "System.Func",
-                 Generics = generics.ToArray(),
+            return new ResolvedType()
+            {
+                FrameworkClass = "System.Func",
+                Generics = generics.ToArray(),
             };
         }
 
@@ -448,6 +463,7 @@ namespace CSharp2Crayon.Parser
         private static Dictionary<string, HashSet<string>> CLASS_ALL_PARENTS = new Dictionary<string, HashSet<string>>();
 
         private static Dictionary<string, string[]> FRAMEWORK_CLASSES_AND_PARENTS = new Dictionary<string, string[]>() {
+            // Note that there's also a constructor list at the bottom of FunctionInvocation.cs
             { "System.Collections.Generic.Dictionary", "System.Collections.Generic.IDictionary".Split(',') },
             { "System.Collections.Generic.HashSet", "System.Collections.Generic.ICollection".Split(',') },
             { "System.Collections.Generic.ICollection", "System.Collections.Generic.IEnumerable".Split(',') },
@@ -461,6 +477,7 @@ namespace CSharp2Crayon.Parser
             { "System.Exception", new string[0] },
             { "System.Func", new string[0] },
             { "System.IDisposable", new string[0] },
+            { "System.InvalidOperationException", "System.Exception".Split(',') },
             { "System.NotImplementedException", "System.Exception".Split(',') },
             { "System.Random", new string[0] },
             { "System.Reflection.Assembly", new string[0] },

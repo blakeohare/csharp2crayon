@@ -12,7 +12,8 @@
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            this.ResolvedType = ResolvedType.Bool();
+            return this;
         }
     }
 }
