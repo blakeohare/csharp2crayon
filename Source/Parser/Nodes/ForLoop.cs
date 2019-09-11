@@ -21,7 +21,12 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            VariableScope loopScope = new VariableScope(varScope);
+            this.InitCode = Executable.ResolveTypesForCode(this.InitCode, context, loopScope);
+            this.Condition = this.Condition.ResolveTypes(context, loopScope);
+            this.StepCode = Executable.ResolveTypesForCode(this.StepCode, context, loopScope);
+            this.Code = Executable.ResolveTypesForCode(this.Code, context, loopScope);
+            return Listify(this);
         }
     }
 }

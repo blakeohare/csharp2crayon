@@ -83,9 +83,31 @@ namespace CSharp2Crayon.Parser
                 for (int i = 0; i < this.Generics.Length; ++i)
                 {
                     if (i > 0) sb.Append(", ");
-                    this.Generics[i].ToStringImpl(sb);
+                    if (this.Generics[i] == null)
+                    {
+                        sb.Append("null");
+                    }
+                    else
+                    {
+                        this.Generics[i].ToStringImpl(sb);
+                    }
                 }
                 sb.Append(">");
+            }
+        }
+
+        public void RecursivelyApplyATypeToAllNulls(ResolvedType replacer)
+        {
+            for (int i = 0; i < this.Generics.Length; ++i)
+            {
+                if (this.Generics[i] == null)
+                {
+                    this.Generics[i] = replacer;
+                }
+                else
+                {
+                    this.Generics[i].RecursivelyApplyATypeToAllNulls(replacer);
+                }
             }
         }
 

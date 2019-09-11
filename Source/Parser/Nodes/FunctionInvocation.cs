@@ -99,7 +99,13 @@ namespace CSharp2Crayon.Parser.Nodes
                 ResolvedType rootResolvedType = df.Root.ResolvedType;
                 if (rootResolvedType.CustomType != null && rootResolvedType.CustomType is ClassLikeDefinition)
                 {
-                    foreach (TopLevelEntity entity in ((ClassLikeDefinition)rootResolvedType.CustomType).GetMember(df.FieldName.Value))
+                    TopLevelEntity[] members = ((ClassLikeDefinition)rootResolvedType.CustomType).GetMember(df.FieldName.Value);
+                    if (members == null)
+                    {
+                        throw new ParserException(df.FieldName, "The field '" + df.FieldName.Value + "' does not exist.");
+                    }
+
+                    foreach (TopLevelEntity entity in members)
                     {
                         VerifiedFieldReference vfr = new VerifiedFieldReference(this.FirstToken, this.parent, df.FieldName, df.Root, null);
                         if (entity is FieldDefinition)
@@ -154,7 +160,7 @@ namespace CSharp2Crayon.Parser.Nodes
                                     {
                                         // null means retroactively apply the return type of the function
                                         possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
-                                            ResolvedType.CreateEnumerableType(itemType),
+                                            ResolvedType.CreateEnumerableType(null),
                                             ResolvedType.CreateFunctionPointerType(null, itemType))));
                                     }
                                     else
@@ -380,7 +386,8 @@ namespace CSharp2Crayon.Parser.Nodes
 
                             case "System.Collections.Generic.Dictionary":
                                 // collection with 2 generics
-                                possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif) {
+                                possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif)
+                                {
                                     ResolvedType = ResolvedType.CreateFunction(cif.Class)
                                 });
                                 if (this.Args.Length == 1)
@@ -422,11 +429,10 @@ namespace CSharp2Crayon.Parser.Nodes
             for (int i = 0; i < this.Args.Length; ++i)
             {
                 Expression arg = this.Args[i];
-
                 if (arg is Lambda)
                 {
                     Lambda lambda = (Lambda)arg;
-                    List<ResolvedType[]> expectedArgTypes = new List<ResolvedType[]>();
+                    List<ResolvedType[]> allCompatibleArgPatterns = new List<ResolvedType[]>();
                     for (int j = 0; j < possibleFunctionRoots.Count; ++j)
                     {
                         ResolvedType expectedArgType = possibleFunctionRoots[j].ResolvedType.Generics[i];
@@ -447,20 +453,22 @@ namespace CSharp2Crayon.Parser.Nodes
                             --j;
                             continue;
                         }
-                        expectedArgTypes.Add(expectedLambdaArgTypes.ToArray());
+                        allCompatibleArgPatterns.Add(expectedLambdaArgTypes.ToArray());
                     }
 
-                    if (expectedArgTypes.Count == 1)
+                    if (allCompatibleArgPatterns.Count == 1)
                     {
-                        ResolvedType[] expectedArgTypesWinner = expectedArgTypes[0];
+                        ResolvedType[] expectedArgPatternWinner = allCompatibleArgPatterns[0];
 
-                        arg = ((Lambda)arg).ResolveTypesWithExteriorHint(context, varScope, expectedArgTypes[0]);
+                        arg = ((Lambda)arg).ResolveTypesWithExteriorHint(context, varScope, expectedArgPatternWinner);
+
                         // If the outgoing return type is not known, then scrape it from the resolved lambda, which
                         // is now aware of its own return type from within the code.
-                        if (expectedArgTypesWinner[expectedArgTypesWinner.Length - 1] == null)
+                        if (expectedArgPatternWinner[expectedArgPatternWinner.Length - 1] == null)
                         {
-                            expectedArgTypesWinner[expectedArgTypesWinner.Length - 1] =
-                                arg.ResolvedType.Generics[arg.ResolvedType.Generics.Length - 1];
+                            ResolvedType returnTypeFromInsideLambda = arg.ResolvedType.Generics[arg.ResolvedType.Generics.Length - 1];
+                            expectedArgPatternWinner[expectedArgPatternWinner.Length - 1] = returnTypeFromInsideLambda;
+                            possibleFunctionRoots[0].ResolvedType.RecursivelyApplyATypeToAllNulls(returnTypeFromInsideLambda);
                         }
                     }
                     else
