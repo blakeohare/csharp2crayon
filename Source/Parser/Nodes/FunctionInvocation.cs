@@ -161,7 +161,10 @@ namespace CSharp2Crayon.Parser.Nodes
                                     break;
 
                                 case "ToDictionary":
-                                    throw new ParserException(this.FirstToken, "TODO: implement .ToDictionary()");
+                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                        ResolvedType.CreateDictionary(null, itemType),
+                                        ResolvedType.CreateFunction(null, itemType))));
+                                    break;
 
                                 case "Select":
                                     CSharpType[] inlineTypes = df.InlineTypeSpecification;
@@ -296,6 +299,14 @@ namespace CSharp2Crayon.Parser.Nodes
                             case "ContainsValue":
                                 possibleRoots.Add(ConvertDfToVfr(df,
                                     ResolvedType.CreateFunction(ResolvedType.Bool(), valueType)));
+                                break;
+
+                            case "TryGetValue":
+                                possibleRoots.Add(ConvertDfToVfr(df,
+                                    ResolvedType.CreateFunction(ResolvedType.Bool(),
+                                    new ResolvedType[] {
+                                        keyType,
+                                        valueType })));
                                 break;
 
                             default: break;

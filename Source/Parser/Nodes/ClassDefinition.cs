@@ -39,6 +39,12 @@ namespace CSharp2Crayon.Parser.Nodes
 
         private Dictionary<string, TopLevelEntity[]> membersByNameLocalOnly = null;
         private Dictionary<string, TopLevelEntity[]> membersByNameFlattened = null;
+
+        public TopLevelEntity[] GetMemberNonNull(string name)
+        {
+            return GetMember(name) ?? new TopLevelEntity[0];
+        }
+
         public TopLevelEntity[] GetMember(string name)
         {
             if (this.membersByNameFlattened == null)

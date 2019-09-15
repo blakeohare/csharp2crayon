@@ -39,8 +39,39 @@ namespace CSharp2Crayon.Parser.Nodes
             }
             else
             {
-                // default value
-                throw new System.NotImplementedException();
+                if (this.ResolvedType.FrameworkClass != null ||
+                    this.ResolvedType.CustomType != null ||
+                    this.ResolvedType.PrimitiveType == "string")
+                {
+                    this.InitialValue = new NullConstant(this.FirstToken, this.Parent);
+                    this.InitialValue.ResolvedType = this.ResolvedType;
+                }
+                else if (this.ResolvedType.PrimitiveType != null)
+                {
+                    switch (this.ResolvedType.PrimitiveType)
+                    {
+                        case "int":
+                            this.InitialValue = new IntegerConstant(this.FirstToken, 0, this.Parent)
+                            {
+                                ResolvedType = ResolvedType.Int()
+                            };
+                            break;
+
+                        case "double":
+                            this.InitialValue = new DoubleConstant(this.FirstToken, 0.0, this.Parent)
+                            {
+                                ResolvedType = ResolvedType.Double()
+                            };
+                            break;
+
+                        default:
+                            throw new System.NotImplementedException();
+                    }
+                }
+                else
+                {
+                    throw new System.NotImplementedException();
+                }
             }
 
             varScope.DeclareVariable(this.VariableName.Value, this.ResolvedType);

@@ -6,6 +6,8 @@ namespace CSharp2Crayon.Parser.Nodes
     {
         private TopLevelEntity parent;
 
+        public TopLevelEntity Parent { get { return this.parent; } } // TODO: get rid of the field and just use this.
+
         public Executable(Token firstToken, TopLevelEntity parent)
             : base(firstToken)
         {

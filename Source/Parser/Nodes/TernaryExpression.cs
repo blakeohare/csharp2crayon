@@ -23,7 +23,29 @@
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            this.Condition = this.Condition.ResolveTypes(context, varScope);
+            if (!this.Condition.ResolvedType.IsBool)
+            {
+                throw new ParserException(this.Condition.FirstToken, "The ternary condition must be based on a boolean.");
+            }
+
+            this.TrueExpression = this.TrueExpression.ResolveTypes(context, varScope);
+            this.FalseExpression = this.FalseExpression.ResolveTypes(context, varScope);
+
+            if (this.TrueExpression.ResolvedType.CanBeAssignedTo(this.FalseExpression.ResolvedType, context))
+            {
+                this.ResolvedType = this.FalseExpression.ResolvedType;
+            }
+            else if (this.FalseExpression.ResolvedType.CanBeAssignedTo(this.TrueExpression.ResolvedType, context))
+            {
+                this.ResolvedType = this.TrueExpression.ResolvedType;
+            }
+            else
+            {
+                throw new ParserException(this.TernaryToken, "I can't really figure out what type this expression is supposed to be.");
+            }
+
+            return this;
         }
     }
 }

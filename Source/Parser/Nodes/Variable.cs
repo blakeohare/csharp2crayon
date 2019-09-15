@@ -32,37 +32,45 @@
             this.ResolvedType = varScope.GetVariableType(name);
             if (this.ResolvedType == null)
             {
-                foreach (TopLevelEntity member in this.ClassContainer.GetMember(name))
+                foreach (TopLevelEntity member in this.ClassContainer.GetMemberNonNull(name))
                 {
                     if (member is PropertyDefinition || member is FieldDefinition || member is MethodDefinition)
                     {
+                        VerifiedFieldReference vfr;
                         if (member.IsStatic)
                         {
                             ClassLikeDefinition cd = member.ClassContainer;
                             StaticClassReference classRef = new StaticClassReference(this.FirstToken, this.parent, member.ClassContainer);
-                            VerifiedFieldReference vfr = new VerifiedFieldReference(this.FirstToken, this.parent, this.Name, classRef, ResolvedType.FromClass(cd));
-                            if (member is PropertyDefinition)
-                            {
-                                vfr.Property = (PropertyDefinition)member;
-                            }
-                            else if (member is FieldDefinition)
-                            {
-                                vfr.Field = (FieldDefinition)member;
-                            }
-                            else if (member is MethodDefinition)
-                            {
-                                vfr.Method = (MethodDefinition)member;
-                            }
-                            else
-                            {
-                                throw new System.NotImplementedException();
-                            }
-                            return vfr;
+                            vfr = new VerifiedFieldReference(this.FirstToken, this.parent, this.Name, classRef, ResolvedType.FromClass(cd));
+                        }
+                        else
+                        {
+                            ThisKeyword thisKeyword = new ThisKeyword(this.FirstToken, this.Parent);
+                            thisKeyword.ResolvedType = ResolvedType.FromClass(this.Parent.ClassContainer);
+                            vfr = new VerifiedFieldReference(this.FirstToken, this.parent, this.Name, thisKeyword, null);
+                        }
+
+                        if (member is PropertyDefinition)
+                        {
+                            vfr.Property = (PropertyDefinition)member;
+                            vfr.ResolvedType = vfr.Property.ResolvedType;
+                        }
+                        else if (member is FieldDefinition)
+                        {
+                            vfr.Field = (FieldDefinition)member;
+                            vfr.ResolvedType = vfr.Field.ResolvedType;
+                        }
+                        else if (member is MethodDefinition)
+                        {
+                            vfr.Method = (MethodDefinition)member;
+                            vfr.ResolvedType = vfr.Method.ResolvedReturnType;
                         }
                         else
                         {
                             throw new System.NotImplementedException();
                         }
+
+                        return vfr;
                     }
                     else
                     {

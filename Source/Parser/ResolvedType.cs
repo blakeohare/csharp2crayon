@@ -231,9 +231,21 @@ namespace CSharp2Crayon.Parser
 
         public static ResolvedType String() { return GetPrimitiveType("string"); }
         public static ResolvedType Int() { return GetPrimitiveType("int"); }
+        public static ResolvedType Double() { return GetPrimitiveType("double"); }
+        public static ResolvedType Byte() { return GetPrimitiveType("byte"); }
+        public static ResolvedType Long() { return GetPrimitiveType("long"); }
         public static ResolvedType Bool() { return GetPrimitiveType("bool"); }
         public static ResolvedType Object() { return GetPrimitiveType("object"); }
         public static ResolvedType Void() { ResolvedType t = GetPrimitiveType("void"); t.IsVoid = true; return t; }
+
+        public static ResolvedType CreateDictionary(ResolvedType keyType, ResolvedType valueType)
+        {
+            return new ResolvedType()
+            {
+                FrameworkClass = "System.Collections.Generic.Dictionary",
+                Generics = new ResolvedType[] { keyType, valueType },
+            };
+        }
 
         public static ResolvedType CreateArray(ResolvedType itemType)
         {
