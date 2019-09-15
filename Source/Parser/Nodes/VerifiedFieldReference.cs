@@ -106,8 +106,8 @@ namespace CSharp2Crayon.Parser.Nodes
                             {
                                 ResolvedType itemType = rootType.GetEnumerableItemType();
                                 ResolvedType functionReturnType = ResolvedType.GetPrimitiveType("object"); // int or string or float or something, but whatever.
-                                ResolvedType function = ResolvedType.CreateFunctionPointerType(functionReturnType, new ResolvedType[] { itemType });
-                                this.ResolvedType = ResolvedType.CreateFunctionPointerType(
+                                ResolvedType function = ResolvedType.CreateFunction(functionReturnType, new ResolvedType[] { itemType });
+                                this.ResolvedType = ResolvedType.CreateFunction(
                                     ResolvedType.CreateEnumerableType(itemType),
                                     new ResolvedType[] { function });
                             }
@@ -116,7 +116,7 @@ namespace CSharp2Crayon.Parser.Nodes
                         case "ToArray":
                             {
                                 ResolvedType itemType = rootType.GetEnumerableItemType();
-                                this.ResolvedType = ResolvedType.CreateFunctionPointerType(
+                                this.ResolvedType = ResolvedType.CreateFunction(
                                     ResolvedType.CreateArray(itemType),
                                     new ResolvedType[0]);
                             }
@@ -157,7 +157,7 @@ namespace CSharp2Crayon.Parser.Nodes
                     switch (this.PrimitiveMethod)
                     {
                         case "string.ToLowerInvariant":
-                            this.ResolvedType = ResolvedType.CreateFunctionPointerType(ResolvedType.String(), new ResolvedType[0]);
+                            this.ResolvedType = ResolvedType.CreateFunction(ResolvedType.String(), new ResolvedType[0]);
                             break;
 
                         default:
@@ -224,7 +224,7 @@ namespace CSharp2Crayon.Parser.Nodes
             {
                 case "System.Collections.Generic.HashSet:Contains":
                     ResolvedType itemType = this.RootValue.ResolvedType.Generics[0];
-                    this.ResolvedType = ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), new ResolvedType[] { itemType });
+                    this.ResolvedType = ResolvedType.CreateFunction(ResolvedType.Bool(), new ResolvedType[] { itemType });
                     return;
 
                 case "System.Collections.Generic.Dictionary:Keys":

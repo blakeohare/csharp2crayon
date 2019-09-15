@@ -74,7 +74,7 @@ namespace CSharp2Crayon.Parser.Nodes
             List<ResolvedType> argTypes = new List<ResolvedType>(expectedArgsAndReturnTypes);
             argTypes.RemoveAt(argTypes.Count - 1);
 
-            this.ResolvedType = ResolvedType.CreateFunctionPointerType(expectedReturnType, argTypes.ToArray());
+            this.ResolvedType = ResolvedType.CreateFunction(expectedReturnType, argTypes.ToArray());
             return this;
         }
     }

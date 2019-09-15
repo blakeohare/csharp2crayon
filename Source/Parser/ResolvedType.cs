@@ -253,7 +253,7 @@ namespace CSharp2Crayon.Parser
             };
         }
 
-        public static ResolvedType CreateFunctionPointerType(ResolvedType returnType, ResolvedType[] args)
+        public static ResolvedType CreateFunction(ResolvedType returnType, ResolvedType[] args)
         {
             List<ResolvedType> generics = new List<ResolvedType>(args);
             generics.Add(returnType);
@@ -264,7 +264,7 @@ namespace CSharp2Crayon.Parser
             };
         }
 
-        public static ResolvedType CreateFunctionPointerType(ResolvedType returnType, ResolvedType singleArgumentType)
+        public static ResolvedType CreateFunction(ResolvedType returnType, ResolvedType singleArgumentType)
         {
             return new ResolvedType()
             {

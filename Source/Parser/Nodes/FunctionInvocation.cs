@@ -72,7 +72,7 @@ namespace CSharp2Crayon.Parser.Nodes
                         else if (entity is MethodDefinition)
                         {
                             vfr.Method = (MethodDefinition)entity;
-                            vfr.ResolvedType = ResolvedType.CreateFunctionPointerType(
+                            vfr.ResolvedType = ResolvedType.CreateFunction(
                                 vfr.Method.ResolvedReturnType,
                                 vfr.Method.ResolvedArgTypes);
                         }
@@ -116,7 +116,7 @@ namespace CSharp2Crayon.Parser.Nodes
                         else if (entity is MethodDefinition)
                         {
                             vfr.Method = (MethodDefinition)entity;
-                            vfr.ResolvedType = ResolvedType.CreateFunctionPointerType(
+                            vfr.ResolvedType = ResolvedType.CreateFunction(
                                 vfr.Method.ResolvedReturnType,
                                 vfr.Method.ResolvedArgTypes);
                         }
@@ -142,17 +142,17 @@ namespace CSharp2Crayon.Parser.Nodes
                             switch (df.FieldName.Value)
                             {
                                 case "Concat":
-                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
+                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
                                         ResolvedType.CreateEnumerableType(itemType),
                                         ResolvedType.CreateEnumerableType(itemType))));
                                     break;
 
                                 case "OrderBy":
-                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
-                                            ResolvedType.CreateEnumerableType(itemType),
-                                            ResolvedType.CreateFunctionPointerType(
-                                                ResolvedType.Object(),
-                                                itemType))));
+                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                        ResolvedType.CreateEnumerableType(itemType),
+                                        ResolvedType.CreateFunction(
+                                            ResolvedType.Object(),
+                                            itemType))));
                                     break;
 
                                 case "ToArray":
@@ -168,9 +168,9 @@ namespace CSharp2Crayon.Parser.Nodes
                                     if (inlineTypes == null)
                                     {
                                         // null means retroactively apply the return type of the function
-                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
                                             ResolvedType.CreateEnumerableType(null),
-                                            ResolvedType.CreateFunctionPointerType(null, itemType))));
+                                            ResolvedType.CreateFunction(null, itemType))));
                                     }
                                     else
                                     {
@@ -183,9 +183,9 @@ namespace CSharp2Crayon.Parser.Nodes
                                             .Select(it => this.DoTypeLookup(it, context))
                                             .ToArray();
 
-                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
                                             ResolvedType.CreateEnumerableType(itemType),
-                                            ResolvedType.CreateFunctionPointerType(resolvedInlineTypes[1], resolvedInlineTypes[0]))));
+                                            ResolvedType.CreateFunction(resolvedInlineTypes[1], resolvedInlineTypes[0]))));
                                     }
                                     break;
 
@@ -205,7 +205,7 @@ namespace CSharp2Crayon.Parser.Nodes
                                 {
                                     case "Append":
                                         possibleRoots.Add(ConvertDfToVfr(df,
-                                            ResolvedType.CreateFunctionPointerType(ResolvedType.Void(), ResolvedType.Object())));
+                                            ResolvedType.CreateFunction(ResolvedType.Void(), ResolvedType.Object())));
                                         break;
                                 }
                             }
@@ -218,7 +218,7 @@ namespace CSharp2Crayon.Parser.Nodes
                                 {
                                     case "Push":
                                         possibleRoots.Add(ConvertDfToVfr(df,
-                                            ResolvedType.CreateFunctionPointerType(ResolvedType.Void(), itemType)));
+                                            ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
                                         break;
 
                                     case "Pop":
@@ -236,7 +236,7 @@ namespace CSharp2Crayon.Parser.Nodes
                                 {
                                     case "Remove":
                                         possibleRoots.Add(ConvertDfToVfr(df,
-                                            ResolvedType.CreateFunctionPointerType(ResolvedType.Void(), itemType)));
+                                            ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
                                         break;
 
                                     default: break;
@@ -252,7 +252,7 @@ namespace CSharp2Crayon.Parser.Nodes
                         {
                             case "Add":
                                 possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunctionPointerType(ResolvedType.Void(), itemType)));
+                                    ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
                                 break;
 
                             case "Clear":
@@ -262,7 +262,7 @@ namespace CSharp2Crayon.Parser.Nodes
 
                             case "Contains":
                                 possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), itemType)));
+                                    ResolvedType.CreateFunction(ResolvedType.Bool(), itemType)));
                                 break;
 
                         }
@@ -290,12 +290,12 @@ namespace CSharp2Crayon.Parser.Nodes
 
                             case "ContainsKey":
                                 possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), keyType)));
+                                    ResolvedType.CreateFunction(ResolvedType.Bool(), keyType)));
                                 break;
 
                             case "ContainsValue":
                                 possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), valueType)));
+                                    ResolvedType.CreateFunction(ResolvedType.Bool(), valueType)));
                                 break;
 
                             default: break;
@@ -305,7 +305,7 @@ namespace CSharp2Crayon.Parser.Nodes
                     switch (df.FieldName.Value)
                     {
                         case "ToString": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String()))); break;
-                        case "Equals": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunctionPointerType(ResolvedType.Bool(), ResolvedType.Object()))); break;
+                        case "Equals": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.Bool(), ResolvedType.Object()))); break;
                         case "GetHashCode": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.Int()))); break;
                         case "GetType": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.CreateFrameworkType("System.Type")))); break;
                     }
@@ -348,7 +348,7 @@ namespace CSharp2Crayon.Parser.Nodes
                     foreach (ConstructorDefinition ctor in cd.Members.OfType<ConstructorDefinition>())
                     {
                         Expression cifw = new ConstructorInvocationFragmentWrapper(cif);
-                        cifw.ResolvedType = ResolvedType.CreateFunctionPointerType(cif.Class, ctor.ResolvedArgTypes);
+                        cifw.ResolvedType = ResolvedType.CreateFunction(cif.Class, ctor.ResolvedArgTypes);
                         possibleRoots.Add(cifw);
                     }
                 }
@@ -382,13 +382,13 @@ namespace CSharp2Crayon.Parser.Nodes
                                 // Create a collection with an enumerable
                                 possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif)
                                 {
-                                    ResolvedType = ResolvedType.CreateFunctionPointerType(cif.Class, ResolvedType.CreateEnumerableType(generics[0]))
+                                    ResolvedType = ResolvedType.CreateFunction(cif.Class, ResolvedType.CreateEnumerableType(generics[0]))
                                 });
 
                                 // Create a collection with default capacity
                                 possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif)
                                 {
-                                    ResolvedType = ResolvedType.CreateFunctionPointerType(cif.Class, ResolvedType.Int()),
+                                    ResolvedType = ResolvedType.CreateFunction(cif.Class, ResolvedType.Int()),
                                 });
 
                                 break;
@@ -542,7 +542,7 @@ namespace CSharp2Crayon.Parser.Nodes
 
         private static ResolvedType CreateConstructorFuncWithArgs(string className, params ResolvedType[] argTypes)
         {
-            return ResolvedType.CreateFunctionPointerType(
+            return ResolvedType.CreateFunction(
                 ResolvedType.CreateFrameworkType(className),
                 argTypes);
         }
