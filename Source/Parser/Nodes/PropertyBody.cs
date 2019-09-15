@@ -18,7 +18,7 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override void ResolveTypesForSignatures(ParserContext context)
         {
-
+            // do nothing. The signature is resolved by the overall PropertyDefinition, not this body definition.
         }
 
         public override void ResolveTypesInCode(ParserContext context)
@@ -29,11 +29,16 @@ namespace CSharp2Crayon.Parser.Nodes
             {
                 varScope.DeclareVariable("value", propertyDef.ResolvedType);
             }
+
             if (propertyDef.IsIndex)
             {
                 varScope.DeclareVariable(propertyDef.IndexVariableName.Value, propertyDef.IndexResolvedType);
             }
-            this.Code = Executable.ResolveTypesForCode(this.Code, context, varScope);
+
+            if (this.Code != null)
+            {
+                this.Code = Executable.ResolveTypesForCode(this.Code, context, varScope);
+            }
         }
     }
 }

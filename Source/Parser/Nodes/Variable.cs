@@ -15,6 +15,17 @@
             string name = this.Name.Value;
             if (name == "this" || name == "base")
             {
+                if (name == "this")
+                {
+                    ClassLikeDefinition cd = this.Parent.ClassContainer;
+
+                    return new ThisKeyword(this.FirstToken, this.Parent)
+                    {
+                        ResolvedType = ResolvedType.FromClass(cd),
+                    };
+                }
+
+                // TODO: base
                 throw new System.NotImplementedException();
             }
 

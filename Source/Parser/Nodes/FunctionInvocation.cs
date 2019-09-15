@@ -141,6 +141,12 @@ namespace CSharp2Crayon.Parser.Nodes
                         {
                             switch (df.FieldName.Value)
                             {
+                                case "Concat":
+                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
+                                        ResolvedType.CreateEnumerableType(itemType),
+                                        ResolvedType.CreateEnumerableType(itemType))));
+                                    break;
+
                                 case "OrderBy":
                                     possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunctionPointerType(
                                             ResolvedType.CreateEnumerableType(itemType),
@@ -153,6 +159,9 @@ namespace CSharp2Crayon.Parser.Nodes
                                     possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
                                         ResolvedType.CreateArray(itemType))));
                                     break;
+
+                                case "ToDictionary":
+                                    throw new ParserException(this.FirstToken, "TODO: implement .ToDictionary()");
 
                                 case "Select":
                                     CSharpType[] inlineTypes = df.InlineTypeSpecification;
