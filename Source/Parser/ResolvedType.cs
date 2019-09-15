@@ -16,6 +16,55 @@ namespace CSharp2Crayon.Parser
 
         public bool IsNull { get; private set; } // The null type is for expressions and works like a generic object reference except it can be assigned to more specific things.
 
+        public bool IsNumber
+        {
+            get
+            {
+                if (this.PrimitiveType == null) return false;
+                switch (this.PrimitiveType)
+                {
+                    case "int":
+                    case "float":
+                    case "double":
+                    case "byte":
+                    case "long":
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        }
+
+        public bool IsIntLike
+        {
+            get
+            {
+                if (this.PrimitiveType == null) return false;
+                switch (this.PrimitiveType)
+                {
+                    case "int":
+                    case "long":
+                    case "byte":
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        }
+
+        public bool IsString
+        {
+            get
+            {
+                return this.PrimitiveType == "string";
+            }
+        }
+
+        public bool IsBool
+        {
+            get { return this.PrimitiveType == "bool"; }
+        }
+
         private static readonly ResolvedType IENUMERABLE = new ResolvedType() { FrameworkClass = "System.Collections.Generic.IEnumerable" };
         private static readonly ResolvedType[] EMPTY_GENERICS = new ResolvedType[0];
         public bool IsEnumerable(ParserContext ctx)

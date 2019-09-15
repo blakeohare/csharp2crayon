@@ -18,7 +18,15 @@
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            this.Root.ResolveTypes(context, varScope);
+            if (!(this.Root is BracketIndex) && !(this.Root is Variable) && !(this.Root is DotField))
+            {
+                throw new ParserException(
+                    this.IncrementToken,
+                    this.IncrementToken.Value + " is not valid on this expression.");
+            }
+            this.ResolvedType = ResolvedType.Int();
+            return this;
         }
     }
 }

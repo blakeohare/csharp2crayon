@@ -164,6 +164,17 @@ namespace CSharp2Crayon.Parser.Nodes
                             throw new ParserException(this.Name, "string does not have a method called '" + this.Name.Value + "'");
                     }
                 }
+                else if (rootType.IsArray)
+                {
+                    switch (this.Name.Value)
+                    {
+                        case "Length":
+                            this.ResolvedType = ResolvedType.Int();
+                            break;
+                        default:
+                            throw new ParserException(this.FirstToken, "not implemented");
+                    }
+                }
                 else
                 {
                     throw new ParserException(this.FirstToken, "Not implemented");
