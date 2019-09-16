@@ -78,6 +78,16 @@
                     }
                 }
 
+                char c = this.Name.Value[0]; // lame optimization
+                if (c >= 'A' && c <= 'Z')
+                {
+                    Expression newExpr = DotField.AttemptToResolveDotFieldChainIntoDirectReference(new Token[] { this.Name }, context, this);
+                    if (newExpr != null)
+                    {
+                        return newExpr;
+                    }
+                }
+
                 throw new ParserException(this.FirstToken, "This variable is not declared.");
             }
             return this;

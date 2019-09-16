@@ -97,254 +97,281 @@ namespace CSharp2Crayon.Parser.Nodes
                 DotField df = (DotField)this.Root;
                 df.Root = df.Root.ResolveTypes(context, varScope);
                 ResolvedType rootResolvedType = df.Root.ResolvedType;
-                if (rootResolvedType.CustomType != null && rootResolvedType.CustomType is ClassLikeDefinition)
+                if (df.Root is StaticClassReference || df.Root is StaticFrameworkClassReference)
                 {
-                    TopLevelEntity[] members = ((ClassLikeDefinition)rootResolvedType.CustomType).GetMember(df.FieldName.Value);
-                    if (members == null)
+                    if (df.Root is StaticClassReference)
                     {
-                        throw new ParserException(df.FieldName, "The field '" + df.FieldName.Value + "' does not exist.");
+                        throw new System.NotImplementedException();
                     }
-
-                    foreach (TopLevelEntity entity in members)
+                    else
                     {
-                        VerifiedFieldReference vfr = new VerifiedFieldReference(this.FirstToken, this.parent, df.FieldName, df.Root, null);
-                        if (entity is FieldDefinition)
+                        string lookup = rootResolvedType.FrameworkClass + "." + df.FieldName.Value;
+                        switch (lookup)
                         {
-                            vfr.Field = (FieldDefinition)entity;
-                            vfr.ResolvedType = vfr.Field.ResolvedType;
+                            case "System.Environment.GetEnvironmentVariable":
+                                return ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.String(),
+                                    ResolvedType.String()));
+
+                            case "Common.FileUtil.JoinPath":
+                                throw new System.NotImplementedException();
+
+                            default:
+                                throw new System.NotImplementedException();
                         }
-                        else if (entity is MethodDefinition)
-                        {
-                            vfr.Method = (MethodDefinition)entity;
-                            vfr.ResolvedType = ResolvedType.CreateFunction(
-                                vfr.Method.ResolvedReturnType,
-                                vfr.Method.ResolvedArgTypes);
-                        }
-                        else if (entity is PropertyDefinition)
-                        {
-                            vfr.Property = (PropertyDefinition)entity;
-                            vfr.ResolvedType = vfr.Property.ResolvedType;
-                        }
-                        else
-                        {
-                            throw new System.NotImplementedException();
-                        }
-                        possibleRoots.Add(vfr);
-                    }
-                }
-                else if (rootResolvedType.FrameworkClass != null || rootResolvedType.IsArray)
-                {
-                    if (rootResolvedType.IsEnumerable(context))
-                    {
-                        ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
-                        if (this.FileContext.HasLinq)
-                        {
-                            switch (df.FieldName.Value)
-                            {
-                                case "Concat":
-                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
-                                        ResolvedType.CreateEnumerableType(itemType),
-                                        ResolvedType.CreateEnumerableType(itemType))));
-                                    break;
-
-                                case "OrderBy":
-                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
-                                        ResolvedType.CreateEnumerableType(itemType),
-                                        ResolvedType.CreateFunction(
-                                            ResolvedType.Object(),
-                                            itemType))));
-                                    break;
-
-                                case "ToArray":
-                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
-                                        ResolvedType.CreateArray(itemType))));
-                                    break;
-
-                                case "ToDictionary":
-                                    possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
-                                        ResolvedType.CreateDictionary(null, itemType),
-                                        ResolvedType.CreateFunction(null, itemType))));
-                                    break;
-
-                                case "Select":
-                                    CSharpType[] inlineTypes = df.InlineTypeSpecification;
-                                    if (inlineTypes == null)
-                                    {
-                                        // null means retroactively apply the return type of the function
-                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
-                                            ResolvedType.CreateEnumerableType(null),
-                                            ResolvedType.CreateFunction(null, itemType))));
-                                    }
-                                    else
-                                    {
-                                        if (inlineTypes.Length != 2)
-                                        {
-                                            throw new ParserException(df.FieldName, "Linq's .Select needs 2 inline types.");
-                                        }
-
-                                        ResolvedType[] resolvedInlineTypes = inlineTypes
-                                            .Select(it => this.DoTypeLookup(it, context))
-                                            .ToArray();
-
-                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
-                                            ResolvedType.CreateEnumerableType(itemType),
-                                            ResolvedType.CreateFunction(resolvedInlineTypes[1], resolvedInlineTypes[0]))));
-                                    }
-                                    break;
-
-                                case "Where": throw new System.NotImplementedException();
-                                case "OfType": throw new System.NotImplementedException();
-                                case "Cast": throw new System.NotImplementedException();
-                                default: break;
-                            }
-                        }
-                    }
-
-                    switch (rootResolvedType.FrameworkClass)
-                    {
-                        case "System.Text.StringBuilder":
-                            {
-                                switch (df.FieldName.Value)
-                                {
-                                    case "Append":
-                                        possibleRoots.Add(ConvertDfToVfr(df,
-                                            ResolvedType.CreateFunction(ResolvedType.Void(), ResolvedType.Object())));
-                                        break;
-                                }
-                            }
-                            break;
-
-                        case "System.Collections.Generic.Stack":
-                            {
-                                ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
-                                switch (df.FieldName.Value)
-                                {
-                                    case "Push":
-                                        possibleRoots.Add(ConvertDfToVfr(df,
-                                            ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
-                                        break;
-
-                                    case "Pop":
-                                        possibleRoots.Add(ConvertDfToVfr(df,
-                                            ResolvedType.CreateFunction(itemType)));
-                                        break;
-                                }
-                            }
-                            break;
-
-                        case "System.Collections.Generic.HashSet":
-                            {
-                                ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
-                                switch (df.FieldName.Value)
-                                {
-                                    case "Remove":
-                                        possibleRoots.Add(ConvertDfToVfr(df,
-                                            ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
-                                        break;
-
-                                    default: break;
-                                }
-                            }
-                            break;
-                    }
-
-                    if (rootResolvedType.IsICollection(context))
-                    {
-                        ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
-                        switch (df.FieldName.Value)
-                        {
-                            case "Add":
-                                possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
-                                break;
-
-                            case "Clear":
-                                possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunction(ResolvedType.Void())));
-                                break;
-
-                            case "Contains":
-                                possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunction(ResolvedType.Bool(), itemType)));
-                                break;
-
-                        }
-                    }
-
-                    if (rootResolvedType.IsIList(context))
-                    {
-                        ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
-                        switch (df.FieldName.Value)
-                        {
-                            default: break;
-                        }
-                    }
-
-                    if (rootResolvedType.IsIDictionary(context))
-                    {
-                        ResolvedType keyType = rootResolvedType.Generics[0];
-                        ResolvedType valueType = rootResolvedType.Generics[1];
-                        switch (df.FieldName.Value)
-                        {
-                            case "Clear":
-                                possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunction(ResolvedType.Void())));
-                                break;
-
-                            case "ContainsKey":
-                                possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunction(ResolvedType.Bool(), keyType)));
-                                break;
-
-                            case "ContainsValue":
-                                possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunction(ResolvedType.Bool(), valueType)));
-                                break;
-
-                            case "TryGetValue":
-                                possibleRoots.Add(ConvertDfToVfr(df,
-                                    ResolvedType.CreateFunction(ResolvedType.Bool(),
-                                    new ResolvedType[] {
-                                        keyType,
-                                        valueType })));
-                                break;
-
-                            default: break;
-                        }
-                    }
-
-                    switch (df.FieldName.Value)
-                    {
-                        case "ToString": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String()))); break;
-                        case "Equals": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.Bool(), ResolvedType.Object()))); break;
-                        case "GetHashCode": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.Int()))); break;
-                        case "GetType": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.CreateFrameworkType("System.Type")))); break;
-                    }
-
-                    if (possibleRoots.Count == 0)
-                    {
-                        string rootType = df.Root.ResolvedType.ToString();
-                        // something else that isn't linq, a list, or dictionary
-                        throw new System.NotImplementedException("Method name: " + df.FieldName.Value);
-                    }
-                }
-                else if (rootResolvedType.PrimitiveType != null)
-                {
-                    switch (rootResolvedType.PrimitiveType + "." + df.FieldName)
-                    {
-                        case "string.Join":
-                            throw new System.NotImplementedException();
-                        case "string.ToLower":
-                        case "string.ToLowerInvariant":
-                            possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String())));
-                            break;
-                        default:
-                            throw new System.NotImplementedException();
                     }
                 }
                 else
                 {
-                    throw new System.NotImplementedException();
+                    if (rootResolvedType.CustomType != null && rootResolvedType.CustomType is ClassLikeDefinition)
+                    {
+                        TopLevelEntity[] members = ((ClassLikeDefinition)rootResolvedType.CustomType).GetMember(df.FieldName.Value);
+                        if (members == null)
+                        {
+                            throw new ParserException(df.FieldName, "The field '" + df.FieldName.Value + "' does not exist.");
+                        }
+
+                        foreach (TopLevelEntity entity in members)
+                        {
+                            VerifiedFieldReference vfr = new VerifiedFieldReference(this.FirstToken, this.parent, df.FieldName, df.Root, null);
+                            if (entity is FieldDefinition)
+                            {
+                                vfr.Field = (FieldDefinition)entity;
+                                vfr.ResolvedType = vfr.Field.ResolvedType;
+                            }
+                            else if (entity is MethodDefinition)
+                            {
+                                vfr.Method = (MethodDefinition)entity;
+                                vfr.ResolvedType = ResolvedType.CreateFunction(
+                                    vfr.Method.ResolvedReturnType,
+                                    vfr.Method.ResolvedArgTypes);
+                            }
+                            else if (entity is PropertyDefinition)
+                            {
+                                vfr.Property = (PropertyDefinition)entity;
+                                vfr.ResolvedType = vfr.Property.ResolvedType;
+                            }
+                            else
+                            {
+                                throw new System.NotImplementedException();
+                            }
+                            possibleRoots.Add(vfr);
+                        }
+                    }
+                    else if (rootResolvedType.FrameworkClass != null || rootResolvedType.IsArray)
+                    {
+                        if (rootResolvedType.IsEnumerable(context))
+                        {
+                            ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                            if (this.FileContext.HasLinq)
+                            {
+                                switch (df.FieldName.Value)
+                                {
+                                    case "Concat":
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                            ResolvedType.CreateEnumerableType(itemType),
+                                            ResolvedType.CreateEnumerableType(itemType))));
+                                        break;
+
+                                    case "OrderBy":
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                            ResolvedType.CreateEnumerableType(itemType),
+                                            ResolvedType.CreateFunction(
+                                                ResolvedType.Object(),
+                                                itemType))));
+                                        break;
+
+                                    case "ToArray":
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                            ResolvedType.CreateArray(itemType))));
+                                        break;
+
+                                    case "ToDictionary":
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                            ResolvedType.CreateDictionary(null, itemType),
+                                            ResolvedType.CreateFunction(null, itemType))));
+                                        break;
+
+                                    case "Select":
+                                        CSharpType[] inlineTypes = df.InlineTypeSpecification;
+                                        if (inlineTypes == null)
+                                        {
+                                            // null means retroactively apply the return type of the function
+                                            possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                                ResolvedType.CreateEnumerableType(null),
+                                                ResolvedType.CreateFunction(null, itemType))));
+                                        }
+                                        else
+                                        {
+                                            if (inlineTypes.Length != 2)
+                                            {
+                                                throw new ParserException(df.FieldName, "Linq's .Select needs 2 inline types.");
+                                            }
+
+                                            ResolvedType[] resolvedInlineTypes = inlineTypes
+                                                .Select(it => this.DoTypeLookup(it, context))
+                                                .ToArray();
+
+                                            possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                                ResolvedType.CreateEnumerableType(itemType),
+                                                ResolvedType.CreateFunction(resolvedInlineTypes[1], resolvedInlineTypes[0]))));
+                                        }
+                                        break;
+
+                                    case "Where": throw new System.NotImplementedException();
+                                    case "OfType": throw new System.NotImplementedException();
+                                    case "Cast": throw new System.NotImplementedException();
+                                    default: break;
+                                }
+                            }
+                        }
+
+                        switch (rootResolvedType.FrameworkClass)
+                        {
+                            case "System.Text.StringBuilder":
+                                {
+                                    switch (df.FieldName.Value)
+                                    {
+                                        case "Append":
+                                            possibleRoots.Add(ConvertDfToVfr(df,
+                                                ResolvedType.CreateFunction(ResolvedType.Void(), ResolvedType.Object())));
+                                            break;
+                                    }
+                                }
+                                break;
+
+                            case "System.Collections.Generic.Stack":
+                                {
+                                    ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                                    switch (df.FieldName.Value)
+                                    {
+                                        case "Push":
+                                            possibleRoots.Add(ConvertDfToVfr(df,
+                                                ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
+                                            break;
+
+                                        case "Pop":
+                                            possibleRoots.Add(ConvertDfToVfr(df,
+                                                ResolvedType.CreateFunction(itemType)));
+                                            break;
+                                    }
+                                }
+                                break;
+
+                            case "System.Collections.Generic.HashSet":
+                                {
+                                    ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                                    switch (df.FieldName.Value)
+                                    {
+                                        case "Remove":
+                                            possibleRoots.Add(ConvertDfToVfr(df,
+                                                ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
+                                            break;
+
+                                        default: break;
+                                    }
+                                }
+                                break;
+                        }
+
+                        if (rootResolvedType.IsICollection(context))
+                        {
+                            ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                            switch (df.FieldName.Value)
+                            {
+                                case "Add":
+                                    possibleRoots.Add(ConvertDfToVfr(df,
+                                        ResolvedType.CreateFunction(ResolvedType.Void(), itemType)));
+                                    break;
+
+                                case "Clear":
+                                    possibleRoots.Add(ConvertDfToVfr(df,
+                                        ResolvedType.CreateFunction(ResolvedType.Void())));
+                                    break;
+
+                                case "Contains":
+                                    possibleRoots.Add(ConvertDfToVfr(df,
+                                        ResolvedType.CreateFunction(ResolvedType.Bool(), itemType)));
+                                    break;
+
+                            }
+                        }
+
+                        if (rootResolvedType.IsIList(context))
+                        {
+                            ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
+                            switch (df.FieldName.Value)
+                            {
+                                default: break;
+                            }
+                        }
+
+                        if (rootResolvedType.IsIDictionary(context))
+                        {
+                            ResolvedType keyType = rootResolvedType.Generics[0];
+                            ResolvedType valueType = rootResolvedType.Generics[1];
+                            switch (df.FieldName.Value)
+                            {
+                                case "Clear":
+                                    possibleRoots.Add(ConvertDfToVfr(df,
+                                        ResolvedType.CreateFunction(ResolvedType.Void())));
+                                    break;
+
+                                case "ContainsKey":
+                                    possibleRoots.Add(ConvertDfToVfr(df,
+                                        ResolvedType.CreateFunction(ResolvedType.Bool(), keyType)));
+                                    break;
+
+                                case "ContainsValue":
+                                    possibleRoots.Add(ConvertDfToVfr(df,
+                                        ResolvedType.CreateFunction(ResolvedType.Bool(), valueType)));
+                                    break;
+
+                                case "TryGetValue":
+                                    possibleRoots.Add(ConvertDfToVfr(df,
+                                        ResolvedType.CreateFunction(ResolvedType.Bool(),
+                                        new ResolvedType[] {
+                                        keyType,
+                                        valueType })));
+                                    break;
+
+                                default: break;
+                            }
+                        }
+
+                        switch (df.FieldName.Value)
+                        {
+                            case "ToString": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String()))); break;
+                            case "Equals": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.Bool(), ResolvedType.Object()))); break;
+                            case "GetHashCode": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.Int()))); break;
+                            case "GetType": possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.CreateFrameworkType("System.Type")))); break;
+                        }
+
+                        if (possibleRoots.Count == 0)
+                        {
+                            string rootType = df.Root.ResolvedType.ToString();
+                            // something else that isn't linq, a list, or dictionary
+                            throw new System.NotImplementedException("Method name: " + df.FieldName.Value);
+                        }
+                    }
+                    else if (rootResolvedType.PrimitiveType != null)
+                    {
+                        switch (rootResolvedType.PrimitiveType + "." + df.FieldName)
+                        {
+                            case "string.Join":
+                                throw new System.NotImplementedException();
+                            case "string.ToLower":
+                            case "string.ToLowerInvariant":
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String())));
+                                break;
+                            default:
+                                throw new System.NotImplementedException();
+                        }
+                    }
+                    else
+                    {
+                        throw new System.NotImplementedException();
+                    }
                 }
             }
             else if (this.Root is ConstructorInvocationFragment)

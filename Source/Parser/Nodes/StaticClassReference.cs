@@ -12,6 +12,7 @@ namespace CSharp2Crayon.Parser.Nodes
             : base(firstToken, parent)
         {
             this.ClassDef = classDef;
+            this.ResolvedType = ResolvedType.FromClass(classDef);
         }
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)

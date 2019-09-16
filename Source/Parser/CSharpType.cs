@@ -25,6 +25,11 @@ namespace CSharp2Crayon.Parser
             }
         }
 
+        public static CSharpType Fabricate(IList<Token> root)
+        {
+            return new CSharpType(root, EMPTY_GENERICS);
+        }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();

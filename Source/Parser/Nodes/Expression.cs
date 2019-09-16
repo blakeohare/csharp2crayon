@@ -15,7 +15,7 @@
             this.parent = parent;
         }
 
-        protected ResolvedType DoTypeLookup(CSharpType type, ParserContext context)
+        internal ResolvedType DoTypeLookup(CSharpType type, ParserContext context)
         {
             return this.parent.DoTypeLookup(type, context);
         }

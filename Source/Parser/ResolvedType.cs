@@ -560,6 +560,7 @@ namespace CSharp2Crayon.Parser
             { "System.Collections.Generic.List", "System.Collections.Generic.IList".Split(',') },
             { "System.Collections.Generic.Queue", "System.Collections.Generic.IList".Split(',') },
             { "System.Collections.Generic.Stack", "System.Collections.Generic.IList".Split(',') },
+            { "System.Environment", new string[0] },
             { "System.Exception", new string[0] },
             { "System.Func", new string[0] },
             { "System.IDisposable", new string[0] },
@@ -570,6 +571,7 @@ namespace CSharp2Crayon.Parser
             { "System.Text.StringBuilder", new string[0] },
             { "System.Tuple", new string[0] },
 
+            { "Common.FileUtil", new string[0] },
             { "Common.JsonLookup", new string[0] },
             { "Common.Multimap", "System.Collections.Generic.IDictionary".Split(',') },
             { "Common.Pair", new string[0] },

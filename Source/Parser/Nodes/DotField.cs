@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace CSharp2Crayon.Parser.Nodes
 {
@@ -17,13 +18,66 @@ namespace CSharp2Crayon.Parser.Nodes
             this.FieldName = fieldName;
         }
 
-        public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
+        internal static Expression AttemptToResolveDotFieldChainIntoDirectReference(IList<Token> chain, ParserContext context, Expression scope)
         {
-            return this.ResolveTypesWithoutArgs(context, varScope);
+            CSharpType cst = CSharpType.Fabricate(chain);
+            ResolvedType existingThing = scope.DoTypeLookup(cst, context);
+            if (existingThing != null)
+            {
+                if (existingThing.CustomType != null)
+                {
+                    TopLevelEntity tle = existingThing.CustomType;
+                    if (tle is ClassLikeDefinition)
+                    {
+                        return new StaticClassReference(scope.FirstToken, scope.Parent, (ClassLikeDefinition)tle);
+                    }
+                    else
+                    {
+                        throw new System.NotImplementedException();
+                    }
+                }
+                else if (existingThing.FrameworkClass != null)
+                {
+                    return new StaticFrameworkClassReference(scope.FirstToken, scope.Parent, existingThing);
+                }
+                else
+                {
+                    throw new System.NotImplementedException();
+                }
+            }
+            return null;
         }
 
-        public VerifiedFieldReference ResolveTypesWithoutArgs(ParserContext context, VariableScope varScope)
+        public override Expression ResolveTypes(ParserContext context, VariableScope varScope)
         {
+            // This might be a long chain of Namespace references.
+            // Determine if this is a class name. Otherwise recurse down until one is.
+            DotField walker = this;
+            List<Token> chain = new List<Token>() { walker.FieldName };
+            while (walker.Root is DotField)
+            {
+                chain.Add(((DotField)walker.Root).FieldName);
+                walker = (DotField)walker.Root;
+            }
+            Variable deepestVariable = walker.Root as Variable;
+            bool isChain = false;
+            if (deepestVariable != null)
+            {
+                char c = deepestVariable.Name.Value[0];
+                isChain = c >= 'A' && c <= 'Z'; // This is a lame optimization.
+                chain.Add(deepestVariable.FirstToken);
+                chain.Reverse();
+            }
+
+            if (isChain)
+            {
+                Expression newExpr = AttemptToResolveDotFieldChainIntoDirectReference(chain, context, this);
+                if (newExpr != null)
+                {
+                    return newExpr;
+                }
+            }
+
             this.Root = this.Root.ResolveTypes(context, varScope);
 
             if (this.Root.ResolvedType == null)
