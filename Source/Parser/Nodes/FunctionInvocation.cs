@@ -108,14 +108,36 @@ namespace CSharp2Crayon.Parser.Nodes
                         string lookup = rootResolvedType.FrameworkClass + "." + df.FieldName.Value;
                         switch (lookup)
                         {
+                            // (string) => string
                             case "System.Environment.GetEnvironmentVariable":
-                                return ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                            case "Common.FileUtil.GetParentDirectory":
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
                                     ResolvedType.String(),
-                                    ResolvedType.String()));
+                                    ResolvedType.String())));
+                                break;
 
+                            // (string, string) => string
+                            case "Common.FileUtil.GetAbsolutePathFromRelativeOrAbsolutePath":
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.String(),
+                                    ResolvedType.String())));
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.String(),
+                                    new ResolvedType[] { ResolvedType.String(), ResolvedType.String() })));
+                                break;
+
+                            // (params string[]) => string
                             case "Common.FileUtil.JoinPath":
-                                throw new System.NotImplementedException();
-
+                                List<ResolvedType> paramsStrings = new List<ResolvedType>();
+                                for (int i = 0; i < this.Args.Length; ++i)
+                                {
+                                    paramsStrings.Add(ResolvedType.String());
+                                }
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.String(),
+                                    paramsStrings.ToArray())));
+                                break;
+                                
                             default:
                                 throw new System.NotImplementedException();
                         }
@@ -363,6 +385,14 @@ namespace CSharp2Crayon.Parser.Nodes
                             case "string.ToLower":
                             case "string.ToLowerInvariant":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String())));
+                                break;
+                            case "string.Split":
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.String(),
+                                    new ResolvedType[] { ResolvedType.String(), ResolvedType.CreateArray(ResolvedType.String()) })));
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.String(),
+                                    new ResolvedType[] { ResolvedType.Char(), ResolvedType.CreateArray(ResolvedType.String()) })));
                                 break;
                             default:
                                 throw new System.NotImplementedException();

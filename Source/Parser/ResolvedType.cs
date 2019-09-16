@@ -16,6 +16,34 @@ namespace CSharp2Crayon.Parser
 
         public bool IsNull { get; private set; } // The null type is for expressions and works like a generic object reference except it can be assigned to more specific things.
 
+        public bool IsReferenceType
+        {
+            get
+            {
+                if (this.PrimitiveType != null)
+                {
+                    switch (this.PrimitiveType)
+                    {
+                        case "string":
+                        case "object":
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+                else if (this.CustomType != null)
+                {
+                    // not enums.
+                    return this.CustomType is ClassLikeDefinition;
+                }
+                else
+                {
+
+                    return true;
+                }
+            }
+        }
+
         public bool IsNumber
         {
             get
@@ -230,6 +258,7 @@ namespace CSharp2Crayon.Parser
         }
 
         public static ResolvedType String() { return GetPrimitiveType("string"); }
+        public static ResolvedType Char() { return GetPrimitiveType("char"); }
         public static ResolvedType Int() { return GetPrimitiveType("int"); }
         public static ResolvedType Double() { return GetPrimitiveType("double"); }
         public static ResolvedType Byte() { return GetPrimitiveType("byte"); }
@@ -568,6 +597,7 @@ namespace CSharp2Crayon.Parser
             { "System.NotImplementedException", "System.Exception".Split(',') },
             { "System.Random", new string[0] },
             { "System.Reflection.Assembly", new string[0] },
+            { "System.StringSplitOptions", new string[0] },
             { "System.Text.StringBuilder", new string[0] },
             { "System.Tuple", new string[0] },
 

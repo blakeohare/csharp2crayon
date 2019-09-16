@@ -28,6 +28,8 @@ namespace CSharp2Crayon.Parser.Nodes
             {
                 Expression leftExpr = this.Expressions[i];
                 Expression rightExpr = this.Expressions[i + 1];
+                ResolvedType leftType = leftExpr.ResolvedType;
+                ResolvedType rightType = rightExpr.ResolvedType;
                 switch (this.Ops[i].Value)
                 {
                     case "==":
@@ -40,26 +42,26 @@ namespace CSharp2Crayon.Parser.Nodes
                     case ">":
                     case "<=":
                     case "<":
-                        if (!leftExpr.ResolvedType.IsNumber) throw new ParserException(leftExpr.FirstToken, NOT_A_NUMBER_ERROR);
-                        if (!rightExpr.ResolvedType.IsNumber) throw new ParserException(rightExpr.FirstToken, NOT_A_NUMBER_ERROR);
+                        if (!leftType.IsNumber) throw new ParserException(leftExpr.FirstToken, NOT_A_NUMBER_ERROR);
+                        if (!rightType.IsNumber) throw new ParserException(rightExpr.FirstToken, NOT_A_NUMBER_ERROR);
                         cumulativeType = ResolvedType.Bool();
                         break;
 
                     case "+":
-                        if (this.Expressions[i].ResolvedType.IsString || this.Expressions[i + 1].ResolvedType.IsString)
+                        if (leftType.IsString || rightType.IsString)
                         {
                             cumulativeType = ResolvedType.String();
                         }
                         else
                         {
-                            cumulativeType = CombineNumberTypes(this.Expressions[i], this.Expressions[i + 1]);
+                            cumulativeType = CombineNumberTypes(leftExpr, rightExpr);
                         }
                         break;
 
                     case "-":
                     case "/":
                     case "*":
-                        cumulativeType = CombineNumberTypes(this.Expressions[i], this.Expressions[i + 1]);
+                        cumulativeType = CombineNumberTypes(leftExpr, rightExpr);
                         break;
 
                     case "<<":
@@ -67,17 +69,28 @@ namespace CSharp2Crayon.Parser.Nodes
                     case "&":
                     case "|":
                     case "^":
-                        if (!leftExpr.ResolvedType.IsIntLike) throw new ParserException(leftExpr.FirstToken, INT_REQUIRED_ERROR);
-                        if (!rightExpr.ResolvedType.IsIntLike) throw new ParserException(rightExpr.FirstToken, INT_REQUIRED_ERROR);
+                        if (!leftType.IsIntLike) throw new ParserException(leftExpr.FirstToken, INT_REQUIRED_ERROR);
+                        if (!rightType.IsIntLike) throw new ParserException(rightExpr.FirstToken, INT_REQUIRED_ERROR);
                         cumulativeType = CombineNumberTypes(leftExpr, rightExpr);
                         break;
 
 
                     case "&&":
                     case "||":
-                        if (!leftExpr.ResolvedType.IsBool) throw new ParserException(leftExpr.FirstToken, BOOLEAN_REQUIRED_ERROR);
-                        if (!rightExpr.ResolvedType.IsBool) throw new ParserException(rightExpr.FirstToken, BOOLEAN_REQUIRED_ERROR);
+                        if (!leftType.IsBool) throw new ParserException(leftExpr.FirstToken, BOOLEAN_REQUIRED_ERROR);
+                        if (!rightType.IsBool) throw new ParserException(rightExpr.FirstToken, BOOLEAN_REQUIRED_ERROR);
                         cumulativeType = ResolvedType.Bool();
+                        break;
+
+                    case "??":
+                        if (!leftType.IsReferenceType) throw new ParserException(leftExpr.FirstToken, "This type is not nullable and cannot be used with '??'");
+                        if (!rightType.IsReferenceType) throw new ParserException(rightExpr.FirstToken, "This type is not nullable and cannot be used with '??'");
+                        if (leftType.CanBeAssignedTo(rightType, context)) cumulativeType = rightType;
+                        else if (rightType.CanBeAssignedTo(leftType, context)) cumulativeType = leftType;
+                        else
+                        {
+                            throw new ParserException(leftExpr.FirstToken, "Cannot use ?? on these two types. It is unclear what the resulting type should be.");
+                        }
                         break;
 
                     default:
