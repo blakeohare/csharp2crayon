@@ -398,6 +398,9 @@ namespace CSharp2Crayon.Parser
 
             if (this.IsSameAs(otherType)) return true;
 
+            if (otherType.IsNull) return false;
+            if (this.IsNull && (otherType.FrameworkClass != null || otherType.CustomType != null || otherType.IsString || otherType.PrimitiveType == "object")) return true;
+
             if (this.Generics.Length != otherType.Generics.Length) return false;
 
             if (otherType.PrimitiveType == "object") return true;
