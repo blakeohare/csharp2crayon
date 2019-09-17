@@ -330,6 +330,27 @@ namespace CSharp2Crayon.Parser.Nodes
                                     }
                                 }
                                 break;
+
+                            case "CommonUtil.Json.JsonParser":
+                                {
+                                    switch (df.FieldName.Value)
+                                    {
+                                        case "AddOption":
+                                            possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                                rootResolvedType,
+                                                ResolvedType.GetEnumFieldTypeOfFrameworkEnum("CommonUtil.Json.JsonOption"))));
+                                            break;
+
+                                        case "ParseAsDictionary":
+                                            possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                                ResolvedType.CreateIDictionary(ResolvedType.String(), ResolvedType.Object()))));
+                                            break;
+
+                                        default:
+                                            throw new ParserException(df.FieldName, "Method Not implemented: " + df.FieldName.Value);
+                                    }
+                                }
+                                break;
                         }
 
                         if (rootResolvedType.IsICollection(context))
@@ -434,10 +455,12 @@ namespace CSharp2Crayon.Parser.Nodes
                         {
                             case "string.Join":
                                 throw new System.NotImplementedException();
-                            case "string.ToLower":
+
                             case "string.ToLowerInvariant":
+                            case "string.ToUpperInvariant":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String())));
                                 break;
+
                             case "string.Split":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
                                     ResolvedType.String(),
@@ -446,8 +469,9 @@ namespace CSharp2Crayon.Parser.Nodes
                                     ResolvedType.String(),
                                     new ResolvedType[] { ResolvedType.Char(), ResolvedType.CreateArray(ResolvedType.String()) })));
                                 break;
+
                             default:
-                                throw new System.NotImplementedException();
+                                throw new ParserException(df.FieldName, "Not implemented");
                         }
                     }
                     else
@@ -706,9 +730,13 @@ namespace CSharp2Crayon.Parser.Nodes
             {
                 "CommonUtil.Json.JsonLookup",
                 new ResolvedType[] {
-                    CreateConstructorFuncWithArgs("CommonUtil.Json.JsonLookup", ResolvedType.CreateIDictionary(ResolvedType.String(), ResolvedType.Bool()))
+                    CreateConstructorFuncWithArgs("CommonUtil.Json.JsonLookup", ResolvedType.CreateIDictionary(ResolvedType.String(), ResolvedType.Object()))
                 }
-            }
+            },
+            {
+                "CommonUtil.Json.JsonParser.JsonParserException",
+                 new ResolvedType[] { CreateConstructorFuncWithArgs("CommonUtil.Json.JsonParserException", ResolvedType.String()) }
+            },
         };
     }
 }

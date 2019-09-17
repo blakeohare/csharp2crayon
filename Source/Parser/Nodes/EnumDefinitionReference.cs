@@ -4,15 +4,10 @@ namespace CSharp2Crayon.Parser.Nodes
 {
     public class EnumDefinitionReference : Expression
     {
-
-        public EnumDefinition EnumDef { get; private set; }
-
-        public EnumDefinitionReference(Token firstToken, TopLevelEntity parent, EnumDefinition enumDef)
+        public EnumDefinitionReference(Token firstToken, TopLevelEntity parent, ResolvedType enumAsType)
             : base(firstToken, parent)
         {
-            this.EnumDef = enumDef;
-
-            this.ResolvedType = ResolvedType.CreateEnum(enumDef);
+            this.ResolvedType = enumAsType;
         }
 
         public override Expression ResolveTypes(ParserContext context, VariableScope varScope)

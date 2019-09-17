@@ -38,9 +38,12 @@ namespace CSharp2Crayon.Parser
                     // not enums.
                     return this.CustomType is ClassLikeDefinition;
                 }
+                else if (this.IsEnum || this.IsEnumField)
+                {
+                    return false;
+                }
                 else
                 {
-
                     return true;
                 }
             }
@@ -311,6 +314,22 @@ namespace CSharp2Crayon.Parser
             };
         }
 
+        public static ResolvedType GetEnumFieldTypeOfFrameworkEnum(string name)
+        {
+            if (!FRAMEWORK_ENUMS.ContainsKey(name)) return null;
+            return new ResolvedType()
+            {
+                IsEnumField = true,
+                Generics = new ResolvedType[] {
+                    new ResolvedType() {
+                        FrameworkClass = name,
+                        Generics = EMPTY_GENERICS,
+                        IsEnum = true,
+                    }
+                },
+            };
+        }
+
         public static ResolvedType CreateFunction(ResolvedType returnType)
         {
             return new ResolvedType()
@@ -359,12 +378,28 @@ namespace CSharp2Crayon.Parser
             };
         }
 
-        public static ResolvedType CreateEnumField(EnumDefinition enumDef)
+        public bool HasEnumField(string name)
+        {
+            if (!this.IsEnum) throw new System.InvalidOperationException();
+            if (this.CustomType != null)
+            {
+                return ((EnumDefinition)this.CustomType).HasField(name);
+            }
+            if (this.FrameworkClass != null)
+            {
+                string[] fieldNames;
+
+                if (!FRAMEWORK_ENUMS.TryGetValue(this.ToString(), out fieldNames)) throw new System.InvalidOperationException("An invalid framework enum was created somehow.");
+                return fieldNames.Contains(name);
+            }
+            throw new System.InvalidOperationException(); // should not have gotten in this state.
+        }
+
+        public static ResolvedType CreateEnumField(ResolvedType enumAsAType)
         {
             return new ResolvedType()
             {
-                CustomType = enumDef,
-                Generics = EMPTY_GENERICS,
+                Generics = new ResolvedType[] { enumAsAType },
                 IsEnumField = true,
             };
         }
@@ -451,6 +486,16 @@ namespace CSharp2Crayon.Parser
                         Generics = generics,
                     };
                 }
+
+                if (FRAMEWORK_ENUMS.ContainsKey(fullyQualifiedName))
+                {
+                    return new ResolvedType()
+                    {
+                        FrameworkClass = fullyQualifiedName,
+                        Generics = EMPTY_GENERICS,
+                        IsEnum = true,
+                    };
+                }
                 TopLevelEntity tle = context.DoLookup(fullyQualifiedName);
                 if (tle != null)
                 {
@@ -458,6 +503,7 @@ namespace CSharp2Crayon.Parser
                     {
                         CustomType = tle,
                         Generics = generics,
+                        IsEnum = tle is EnumDefinition,
                     };
                 }
             }
@@ -628,6 +674,23 @@ namespace CSharp2Crayon.Parser
             "void",
         };
 
+        private static Dictionary<string, string[]> FRAMEWORK_ENUMS = new Dictionary<string, string[]>() {
+            {
+                "CommonUtil.Json.JsonOption",
+                new string[] {
+                    "FAIL_SILENTLY",
+                    "ALLOW_COMMENTS",
+                    "ALLOW_TRAILING_COMMA",
+                    "ALLOW_SINGLE_QUOTES",
+                    "ALLOW_NON_QUOTED_KEYS",
+                    "ALLOW_NON_OBJECT_AS_ROOT",
+                    "ALLOW_DECIMAL_AS_FLOAT_FIRST_CHAR",
+                    "OVERWRITE_DUPLICATE_KEYS",
+                    "ALLOW_PYTHON_PRIMITIVES",
+                }
+            },
+        };
+
         private static Dictionary<string, HashSet<string>> CLASS_ALL_DIRECT_PARENTS = new Dictionary<string, HashSet<string>>();
         private static Dictionary<string, HashSet<string>> CLASS_ALL_PARENTS = new Dictionary<string, HashSet<string>>();
         private static readonly string[] NO_PARENT = new string[0];
@@ -675,8 +738,8 @@ namespace CSharp2Crayon.Parser
             { "CommonUtil.Http.HttpRequest", NO_PARENT },
             { "CommonUtil.Http.HttpResponse", NO_PARENT },
             { "CommonUtil.Json.JsonLookup", NO_PARENT },
-            { "CommonUtil.Json.JsonOption", NO_PARENT },
             { "CommonUtil.Json.JsonParser", NO_PARENT },
+            { "CommonUtil.Json.JsonParser.JsonParserException", "System.Exception".Split(',') },
             { "CommonUtil.Processes.Process", NO_PARENT },
             { "CommonUtil.Processes.ProcessUtil", NO_PARENT },
             { "CommonUtil.Random.IdGenerator", NO_PARENT },

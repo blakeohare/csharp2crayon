@@ -44,13 +44,13 @@ namespace CSharp2Crayon.Parser.Nodes
             this.TryCode = Executable.ResolveTypesForCode(this.TryCode, context, new VariableScope(varScope));
             foreach (CatchBlock cb in this.CatchBlocks)
             {
-                ResolvedType exceptionType = ResolvedType.Create(cb.ExceptionType, context.ActiveFileContext.NamespaceSearchPrefixes, context);
+                ResolvedType exceptionType = this.Parent.DoTypeLookupFailSilently(cb.ExceptionType, context);
                 if (exceptionType == null) throw new ParserException(cb.ExceptionType.FirstToken, "Exception type not found.");
                 if (!exceptionType.IsException(context)) throw new ParserException(cb.ExceptionType.FirstToken, "This type does not extend from System.Exception");
                 VariableScope vs = new VariableScope(varScope);
-                if (cb.CatchToken != null)
+                if (cb.ExceptionVariable != null)
                 {
-                    vs.DeclareVariable(cb.CatchToken.Value, exceptionType);
+                    vs.DeclareVariable(cb.ExceptionVariable.Value, exceptionType);
                 }
                 cb.Code = Executable.ResolveTypesForCode(cb.Code, context, varScope);
             }

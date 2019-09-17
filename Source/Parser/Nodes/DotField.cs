@@ -23,7 +23,11 @@ namespace CSharp2Crayon.Parser.Nodes
             ResolvedType existingThing = scope.DoTypeLookupFailSilently(cst, context);
             if (existingThing != null)
             {
-                if (existingThing.CustomType != null)
+                if (existingThing.IsEnum)
+                {
+                    return new EnumDefinitionReference(scope.FirstToken, scope.Parent, existingThing);
+                }
+                else if (existingThing.CustomType != null)
                 {
                     TopLevelEntity tle = existingThing.CustomType;
                     if (tle is ClassLikeDefinition)
@@ -32,7 +36,7 @@ namespace CSharp2Crayon.Parser.Nodes
                     }
                     else
                     {
-                        return new EnumDefinitionReference(scope.FirstToken, scope.Parent, (EnumDefinition)tle);
+                        throw new System.NotImplementedException();
                     }
                 }
                 else if (existingThing.FrameworkClass != null)

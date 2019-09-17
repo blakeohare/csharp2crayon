@@ -72,13 +72,16 @@ namespace CSharp2Crayon.Parser
                 .ToArray();
             foreach (TopLevelEntity tle in entities)
             {
+                this.ActiveFileContext = tle.FileContext;
                 tle.ResolveTypesForSignatures(this);
             }
 
             foreach (TopLevelEntity tle in entities)
             {
+                this.ActiveFileContext = tle.FileContext;
                 tle.ResolveTypesInCode(this);
             }
+            this.ActiveFileContext = null;
         }
 
         private void BuildEntityMap()

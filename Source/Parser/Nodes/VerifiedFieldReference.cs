@@ -191,9 +191,11 @@ namespace CSharp2Crayon.Parser.Nodes
             string fieldName = this.Name.Value;
             if (this.RootValue.ResolvedType.IsEnum)
             {
-                EnumDefinition enumDef = (EnumDefinition)this.RootValue.ResolvedType.CustomType;
-
-                this.ResolvedType = ResolvedType.CreateEnumField(enumDef);
+                if (!this.RootValue.ResolvedType.HasEnumField(fieldName))
+                {
+                    throw new ParserException(this.Name, this.RootValue.ResolvedType.ToString() + " doesn't have a field called " + fieldName + ".");
+                }
+                this.ResolvedType = ResolvedType.CreateEnumField(this.RootValue.ResolvedType);
             }
             else
             {
@@ -225,31 +227,50 @@ namespace CSharp2Crayon.Parser.Nodes
 
         private void ResolveFrameworkMethodReference(ResolvedType[] argTypes)
         {
-            string className = this.RootValue.ResolvedType.FrameworkClass;
+            ResolvedType resolvedType = this.RootValue.ResolvedType;
+            if (resolvedType.IsEnum)
+            {
+                if (resolvedType.FrameworkClass != null)
+                {
+                    if (!resolvedType.HasEnumField(this.Name.Value))
+                    {
+                        throw new ParserException(
+                            this.Name,
+                            resolvedType.ToString() + " doesn't have a field called " + this.Name.Value);
+                    }
+                    this.ResolvedType = ResolvedType.CreateEnumField(resolvedType);
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+                return;
+            }
+            string className = resolvedType.FrameworkClass;
             string methodName = this.Name.Value;
             this.Type = MethodRefType.FRAMEWORK_METHOD;
             switch (className + ":" + methodName)
             {
                 case "System.Collections.Generic.HashSet:Contains":
-                    ResolvedType itemType = this.RootValue.ResolvedType.Generics[0];
+                    ResolvedType itemType = resolvedType.Generics[0];
                     this.ResolvedType = ResolvedType.CreateFunction(ResolvedType.Bool(), new ResolvedType[] { itemType });
                     return;
 
                 case "System.Collections.Generic.Dictionary:Keys":
-                    ResolvedType keyType = this.RootValue.ResolvedType.Generics[0];
+                    ResolvedType keyType = resolvedType.Generics[0];
                     this.ResolvedType = ResolvedType.CreateEnumerableType(keyType);
                     return;
 
                 case "System.Collections.Generic.Dictionary:Values":
-                    ResolvedType valueType = this.RootValue.ResolvedType.Generics[1];
+                    ResolvedType valueType = resolvedType.Generics[1];
                     this.ResolvedType = ResolvedType.CreateEnumerableType(valueType);
                     return;
 
                 case "CommonUtil.Collections.Pair:First":
-                    this.ResolvedType = this.RootValue.ResolvedType.Generics[0];
+                    this.ResolvedType = resolvedType.Generics[0];
                     break;
                 case "CommonUtil.Collections.Pair:Second":
-                    this.ResolvedType = this.RootValue.ResolvedType.Generics[1];
+                    this.ResolvedType = resolvedType.Generics[1];
                     break;
 
                 case "CommonUtil.DateTime.Time:UnixTimeNow":
