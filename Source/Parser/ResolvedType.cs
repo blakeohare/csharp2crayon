@@ -12,6 +12,8 @@ namespace CSharp2Crayon.Parser
         public bool IsVoid { get; private set; }
         public bool IsArray { get; private set; }
         public bool IsNullable { get; private set; }
+        public bool IsEnum { get; private set; }
+        public bool IsEnumField { get; private set; }
         public ResolvedType[] Generics { get; private set; }
 
         public bool IsNull { get; private set; } // The null type is for expressions and works like a generic object reference except it can be assigned to more specific things.
@@ -95,6 +97,22 @@ namespace CSharp2Crayon.Parser
 
         private static readonly ResolvedType IENUMERABLE = new ResolvedType() { FrameworkClass = "System.Collections.Generic.IEnumerable" };
         private static readonly ResolvedType[] EMPTY_GENERICS = new ResolvedType[0];
+
+        public bool IsException(ParserContext ctx)
+        {
+            if (this.FrameworkClass != null)
+            {
+                return ResolvedType.IsXASubclassOfY(this.FrameworkClass, "System.Exception", ctx);
+            }
+
+            if (this.CustomType != null)
+            {
+                return ResolvedType.IsXASubclassOfY(this.CustomType.FullyQualifiedName, "System.Exception", ctx);
+            }
+
+            return false;
+        }
+
         public bool IsEnumerable(ParserContext ctx)
         {
             if (this.Generics.Length != 1) return false;
@@ -267,6 +285,14 @@ namespace CSharp2Crayon.Parser
         public static ResolvedType Object() { return GetPrimitiveType("object"); }
         public static ResolvedType Void() { ResolvedType t = GetPrimitiveType("void"); t.IsVoid = true; return t; }
 
+        public static ResolvedType CreateIDictionary(ResolvedType keyType, ResolvedType valueType)
+        {
+            return new ResolvedType()
+            {
+                FrameworkClass = "System.Collectios.Generic.IDictionary",
+                Generics = new ResolvedType[] { keyType, valueType }
+            };
+        }
         public static ResolvedType CreateDictionary(ResolvedType keyType, ResolvedType valueType)
         {
             return new ResolvedType()
@@ -320,6 +346,26 @@ namespace CSharp2Crayon.Parser
             {
                 FrameworkClass = "System.Collections.Generic.IEnumerable",
                 Generics = new ResolvedType[] { thingYoureEnumerating },
+            };
+        }
+
+        public static ResolvedType CreateEnum(EnumDefinition enumDef)
+        {
+            return new ResolvedType()
+            {
+                CustomType = enumDef,
+                Generics = EMPTY_GENERICS,
+                IsEnum = true,
+            };
+        }
+
+        public static ResolvedType CreateEnumField(EnumDefinition enumDef)
+        {
+            return new ResolvedType()
+            {
+                CustomType = enumDef,
+                Generics = EMPTY_GENERICS,
+                IsEnumField = true,
             };
         }
 

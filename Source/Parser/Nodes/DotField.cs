@@ -32,7 +32,7 @@ namespace CSharp2Crayon.Parser.Nodes
                     }
                     else
                     {
-                        throw new System.NotImplementedException();
+                        return new EnumDefinitionReference(scope.FirstToken, scope.Parent, (EnumDefinition)tle);
                     }
                 }
                 else if (existingThing.FrameworkClass != null)

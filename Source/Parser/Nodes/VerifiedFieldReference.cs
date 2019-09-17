@@ -188,24 +188,33 @@ namespace CSharp2Crayon.Parser.Nodes
 
         private void ResolveCustomFieldReference()
         {
-            ClassLikeDefinition rootType = (ClassLikeDefinition)this.RootValue.ResolvedType.CustomType;
             string fieldName = this.Name.Value;
-            TopLevelEntity member = rootType.GetMember(fieldName).FirstOrDefault();
-            if (member == null) throw new ParserException(this.Name, "Not implemented or not found."); // could be a framework field.
+            if (this.RootValue.ResolvedType.IsEnum)
+            {
+                EnumDefinition enumDef = (EnumDefinition)this.RootValue.ResolvedType.CustomType;
 
-            if (member is PropertyDefinition)
-            {
-                this.Property = (PropertyDefinition)member;
-                this.ResolvedType = this.Property.ResolvedType;
-            }
-            else if (member is FieldDefinition)
-            {
-                this.Field = (FieldDefinition)member;
-                this.ResolvedType = this.Field.ResolvedType;
+                this.ResolvedType = ResolvedType.CreateEnumField(enumDef);
             }
             else
             {
-                throw new ParserException(this.FirstToken, "Not implemented");
+                ClassLikeDefinition rootType = (ClassLikeDefinition)this.RootValue.ResolvedType.CustomType;
+                TopLevelEntity member = rootType.GetMember(fieldName).FirstOrDefault();
+                if (member == null) throw new ParserException(this.Name, "Not implemented or not found."); // could be a framework field.
+
+                if (member is PropertyDefinition)
+                {
+                    this.Property = (PropertyDefinition)member;
+                    this.ResolvedType = this.Property.ResolvedType;
+                }
+                else if (member is FieldDefinition)
+                {
+                    this.Field = (FieldDefinition)member;
+                    this.ResolvedType = this.Field.ResolvedType;
+                }
+                else
+                {
+                    throw new ParserException(this.FirstToken, "Not implemented");
+                }
             }
         }
 
@@ -244,11 +253,12 @@ namespace CSharp2Crayon.Parser.Nodes
                     break;
 
                 case "CommonUtil.DateTime.Time:UnixTimeNow":
+                case "System.Collections.Generic.HashSet:Count":
                     this.ResolvedType = ResolvedType.Int();
                     return;
 
                 default:
-                    throw new System.NotImplementedException();
+                    throw new ParserException(this.FirstToken, "Not implemented --> " + className + ":" + methodName);
             }
         }
 

@@ -119,6 +119,7 @@ namespace CSharp2Crayon.Parser.Nodes
                             // (string) => string
                             case "CommonUtil.Environment.EnvironmentVariables.Get":
                             case "CommonUtil.Disk.FileUtil.GetParentDirectory":
+                            case "CommonUtil.Disk.FileUtil.ReadFileText":
                             case "CommonUtil.Disk.Path.GetFileName":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
                                     ResolvedType.String(),
@@ -164,7 +165,7 @@ namespace CSharp2Crayon.Parser.Nodes
                                 break;
 
                             default:
-                                throw new ParserException(this.FirstToken, "Not implemented");
+                                throw new ParserException(this.FirstToken, "Not implemented: " + lookup);
                         }
                     }
                 }
@@ -535,7 +536,9 @@ namespace CSharp2Crayon.Parser.Nodes
                                 break;
 
                             default:
-                                throw new ParserException(cif.FirstToken, "Cannot find this framework class: " + cif.Class.FrameworkClass);
+                                throw new ParserException(cif.FirstToken,
+                                    "Cannot find this framework collection class' constructor: " + cif.Class.FrameworkClass + ". " +
+                                    "If you're seeing this and this isn't a collection constructor, make sure you add the constructor to the bottom of this file.");
                         }
                     }
                 }
@@ -694,6 +697,18 @@ namespace CSharp2Crayon.Parser.Nodes
                     CreateConstructorFuncWithArgs("System.Text.StringBuilder"),
                 }
             },
+            {
+                "CommonUtil.Json.JsonParser",
+                new ResolvedType[] {
+                    CreateConstructorFuncWithArgs("CommonUtil.Json.JsonParser", ResolvedType.String()),
+                }
+            },
+            {
+                "CommonUtil.Json.JsonLookup",
+                new ResolvedType[] {
+                    CreateConstructorFuncWithArgs("CommonUtil.Json.JsonLookup", ResolvedType.CreateIDictionary(ResolvedType.String(), ResolvedType.Bool()))
+                }
+            }
         };
     }
 }

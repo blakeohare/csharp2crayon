@@ -41,7 +41,22 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new System.NotImplementedException();
+            this.TryCode = Executable.ResolveTypesForCode(this.TryCode, context, new VariableScope(varScope));
+            foreach (CatchBlock cb in this.CatchBlocks)
+            {
+                ResolvedType exceptionType = ResolvedType.Create(cb.ExceptionType, context.ActiveFileContext.NamespaceSearchPrefixes, context);
+                if (exceptionType == null) throw new ParserException(cb.ExceptionType.FirstToken, "Exception type not found.");
+                if (!exceptionType.IsException(context)) throw new ParserException(cb.ExceptionType.FirstToken, "This type does not extend from System.Exception");
+                VariableScope vs = new VariableScope(varScope);
+                if (cb.CatchToken != null)
+                {
+                    vs.DeclareVariable(cb.CatchToken.Value, exceptionType);
+                }
+                cb.Code = Executable.ResolveTypesForCode(cb.Code, context, varScope);
+            }
+
+            this.FinallyCode = Executable.ResolveTypesForCode(this.FinallyCode, context, new VariableScope(varScope));
+            return Listify(this);
         }
     }
 

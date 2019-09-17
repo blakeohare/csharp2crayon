@@ -12,13 +12,11 @@ namespace CSharp2Crayon.Parser.Nodes
             this.Expression = expr;
         }
 
-        private static readonly ResolvedType SYSTEM_EXCEPTION = ResolvedType.CreateFrameworkType(new string[] { "System", "Exception" });
-
         public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
             this.Expression = this.Expression.ResolveTypes(context, varScope);
 
-            if (!this.Expression.ResolvedType.CanBeAssignedTo(SYSTEM_EXCEPTION, context))
+            if (!this.Expression.ResolvedType.IsException(context))
             {
                 throw new ParserException(this.FirstToken, "Cannot throw a non-System.Exception type.");
             }
