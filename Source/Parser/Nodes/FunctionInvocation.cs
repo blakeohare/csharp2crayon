@@ -133,13 +133,20 @@ namespace CSharp2Crayon.Parser.Nodes
                                 break;
 
                             // (string, string) => string
-                            case "CommonUtil.StringUtil.SplitRemoveEmpty":
                             case "CommonUtil.Disk.FileUtil.GetAbsolutePathFromRelativeOrAbsolutePath":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
                                     ResolvedType.String(),
                                     ResolvedType.String())));
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
                                     ResolvedType.String(),
+                                    new ResolvedType[] { ResolvedType.String(), ResolvedType.String() })));
+                                break;
+
+                            // (string, string) => string[]
+                            case "CommonUtil.StringUtil.SplitOnce":
+                            case "CommonUtil.StringUtil.SplitRemoveEmpty":
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.CreateArray(ResolvedType.String()),
                                     new ResolvedType[] { ResolvedType.String(), ResolvedType.String() })));
                                 break;
 
@@ -205,6 +212,7 @@ namespace CSharp2Crayon.Parser.Nodes
                             ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
                             if (this.FileContext.HasLinq)
                             {
+                                CSharpType[] inlineTypes = df.InlineTypeSpecification;
                                 switch (df.FieldName.Value)
                                 {
                                     case "Concat":
@@ -233,7 +241,6 @@ namespace CSharp2Crayon.Parser.Nodes
                                         break;
 
                                     case "Select":
-                                        CSharpType[] inlineTypes = df.InlineTypeSpecification;
                                         if (inlineTypes == null)
                                         {
                                             // null means retroactively apply the return type of the function
@@ -258,7 +265,17 @@ namespace CSharp2Crayon.Parser.Nodes
                                         }
                                         break;
 
-                                    case "Where": throw new System.NotImplementedException();
+                                    case "Where":
+                                        // TODO: verify inline types
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                            ResolvedType.CreateEnumerableType(itemType),
+                                            ResolvedType.CreateFunction(ResolvedType.Bool(), itemType))));
+                                        break;
+
+                                    case "FirstOrDefault":
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(itemType)));
+                                        break;
+
                                     case "OfType": throw new System.NotImplementedException();
                                     case "Cast": throw new System.NotImplementedException();
                                     default: break;
@@ -362,6 +379,12 @@ namespace CSharp2Crayon.Parser.Nodes
                             ResolvedType valueType = rootResolvedType.Generics[1];
                             switch (df.FieldName.Value)
                             {
+                                case "Add":
+                                    possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                        ResolvedType.Void(),
+                                        new ResolvedType[] { keyType, valueType })));
+                                    break;
+
                                 case "Clear":
                                     possibleRoots.Add(ConvertDfToVfr(df,
                                         ResolvedType.CreateFunction(ResolvedType.Void())));
@@ -440,12 +463,22 @@ namespace CSharp2Crayon.Parser.Nodes
                 ClassDefinition cd = cif.Class.CustomType as ClassDefinition;
                 if (cd != null)
                 {
+                    bool hasAnyConstructors = false;
                     this.ResolvedType = cif.Class;
                     foreach (ConstructorDefinition ctor in cd.Members.OfType<ConstructorDefinition>())
                     {
+                        hasAnyConstructors = true;
                         Expression cifw = new ConstructorInvocationFragmentWrapper(cif);
                         cifw.ResolvedType = ResolvedType.CreateFunction(cif.Class, ctor.ResolvedArgTypes);
                         possibleRoots.Add(cifw);
+                    }
+
+                    if (!hasAnyConstructors)
+                    {
+                        possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif)
+                        {
+                            ResolvedType = ResolvedType.CreateFunction(cif.Class, new ResolvedType[0])
+                        });
                     }
                 }
                 else if (cif.Class.FrameworkClass != null)

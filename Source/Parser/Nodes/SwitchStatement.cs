@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace CSharp2Crayon.Parser.Nodes
 {
@@ -17,6 +16,8 @@ namespace CSharp2Crayon.Parser.Nodes
             TopLevelEntity parent)
             : base(firstToken, parent)
         {
+            this.Condition = condition;
+
             List<SwitchStatementChunk> chunks = new List<SwitchStatementChunk>();
             List<Token> caseTokensForCurrentChunk = new List<Token>();
             List<Expression> caseConstantsForCurrentChunk = new List<Expression>();
@@ -28,7 +29,8 @@ namespace CSharp2Crayon.Parser.Nodes
                 if (codeForCases[i] == null || codeForCases[i].Length == 0)
                 {
                     // carry it over to the next chunk
-                } else
+                }
+                else
                 {
                     chunks.Add(new SwitchStatementChunk()
                     {
@@ -51,7 +53,24 @@ namespace CSharp2Crayon.Parser.Nodes
 
         public override IList<Executable> ResolveTypes(ParserContext context, VariableScope varScope)
         {
-            throw new NotImplementedException();
+            this.Condition = this.Condition.ResolveTypes(context, varScope);
+
+            VariableScope switchScope = new VariableScope(varScope);
+
+            foreach (SwitchStatementChunk chunk in this.Chunks)
+            {
+                for (int i = 0; i < chunk.Cases.Length; ++i)
+                {
+                    Expression caseExpr = chunk.Cases[i];
+                    if (caseExpr != null)
+                    {
+                        chunk.Cases[i] = caseExpr.ResolveTypes(context, switchScope);
+                    }
+                }
+
+                chunk.Code = Executable.ResolveTypesForCode(chunk.Code, context, switchScope);
+            }
+            return Listify(this);
         }
     }
 

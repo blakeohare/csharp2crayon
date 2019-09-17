@@ -236,6 +236,17 @@ namespace CSharp2Crayon.Parser.Nodes
                     this.ResolvedType = ResolvedType.CreateEnumerableType(valueType);
                     return;
 
+                case "CommonUtil.Collections.Pair:First":
+                    this.ResolvedType = this.RootValue.ResolvedType.Generics[0];
+                    break;
+                case "CommonUtil.Collections.Pair:Second":
+                    this.ResolvedType = this.RootValue.ResolvedType.Generics[1];
+                    break;
+
+                case "CommonUtil.DateTime.Time:UnixTimeNow":
+                    this.ResolvedType = ResolvedType.Int();
+                    return;
+
                 default:
                     throw new System.NotImplementedException();
             }
