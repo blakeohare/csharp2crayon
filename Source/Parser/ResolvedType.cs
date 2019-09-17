@@ -505,15 +505,18 @@ namespace CSharp2Crayon.Parser
                         IsEnum = true,
                     };
                 }
-                TopLevelEntity tle = context.DoLookup(fullyQualifiedName);
-                if (tle != null)
+                if (context != null)
                 {
-                    return new ResolvedType()
+                    TopLevelEntity tle = context.DoLookup(fullyQualifiedName);
+                    if (tle != null)
                     {
-                        CustomType = tle,
-                        Generics = generics,
-                        IsEnum = tle is EnumDefinition,
-                    };
+                        return new ResolvedType()
+                        {
+                            CustomType = tle,
+                            Generics = generics,
+                            IsEnum = tle is EnumDefinition,
+                        };
+                    }
                 }
             }
 

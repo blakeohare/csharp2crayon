@@ -22,7 +22,8 @@ namespace CSharp2Crayon
             GatherFilesImpl(output, directory, "", extension);
 
             return output
-                .Where<string>(path => {
+                .Where<string>(path =>
+                {
                     string canonicalPath = path.Replace('\\', '/');
                     foreach (string blackListItem in blackListedFiles)
                     {
@@ -59,6 +60,44 @@ namespace CSharp2Crayon
                 if (path == "bin" || path == "obj") continue;
                 GatherFilesImpl(output, rootDirectory, prefix + path, extension);
             }
+        }
+
+        private static readonly byte[] BUFFER = new byte[500];
+
+        public static string GetTextResource(string path)
+        {
+            System.Reflection.Assembly asm = typeof(Util).Assembly;
+            string name = asm.FullName.Split(',')[0].Trim();
+            string asmPath = name + "." + path.Replace('/', '.');
+            System.IO.Stream stream = asm.GetManifestResourceStream(asmPath);
+
+            List<byte> builder = new List<byte>();
+            int bytesRead = 0;
+            do
+            {
+                bytesRead = stream.Read(BUFFER, 0, BUFFER.Length);
+                if (bytesRead == BUFFER.Length) builder.AddRange(BUFFER);
+                else
+                {
+                    for (int i = 0; i < bytesRead; ++i)
+                    {
+                        builder.Add(BUFFER[i]);
+                    }
+                }
+            } while (bytesRead > 0);
+
+            byte[] bytes;
+            if (builder.Count >= 3 && builder[0] == 239 && builder[1] == 187 && builder[2] == 191)
+            {
+                bytes = builder.Skip(3).ToArray();
+            }
+            else
+            {
+                bytes = builder.ToArray();
+            }
+
+            string value = System.Text.Encoding.UTF8.GetString(bytes);
+            return value;
         }
     }
 }

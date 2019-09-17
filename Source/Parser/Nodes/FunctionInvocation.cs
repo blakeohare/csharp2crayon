@@ -560,9 +560,9 @@ namespace CSharp2Crayon.Parser.Nodes
                 }
                 else if (cif.Class.FrameworkClass != null)
                 {
-                    if (FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES.ContainsKey(cif.Class.FrameworkClass))
+                    if (GetFrameworkConstructorSignature(cif.Class.FrameworkClass) != null)
                     {
-                        foreach (ResolvedType funcType in FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES[cif.Class.FrameworkClass])
+                        foreach (ResolvedType funcType in GetFrameworkConstructorSignature(cif.Class.FrameworkClass))
                         {
                             possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif) { ResolvedType = funcType });
                         }
@@ -773,39 +773,55 @@ namespace CSharp2Crayon.Parser.Nodes
             };
         }
 
-        private static readonly Dictionary<string, ResolvedType[]> FRAMEWORK_CONSTRUCTOR_FUNCTION_SIGNATURES = new Dictionary<string, ResolvedType[]>() {
-            { "System.Exception", CreateStandardExceptionConstructor("System.Exception") },
-            { "System.NotImplementedException", CreateStandardExceptionConstructor("System.NotImplementedException") },
-            { "System.InvalidOperationException", CreateStandardExceptionConstructor("System.InvalidOperationException") },
+        private static Dictionary<string, ResolvedType[]> frameworkConstructors = null;
+        private static ResolvedType[] GetFrameworkConstructorSignature(string typeName)
+        {
+            if (frameworkConstructors == null)
             {
-                "System.Text.StringBuilder",
-                new ResolvedType[] {
-                    CreateConstructorFuncWithArgs("System.Text.StringBuilder"),
-                }
-            },
-            {
-                "CommonUtil.Json.JsonParser",
-                new ResolvedType[] {
-                    CreateConstructorFuncWithArgs("CommonUtil.Json.JsonParser", ResolvedType.String()),
-                }
-            },
-            {
-                "CommonUtil.Json.JsonLookup",
-                new ResolvedType[] {
-                    CreateConstructorFuncWithArgs("CommonUtil.Json.JsonLookup", ResolvedType.CreateIDictionary(ResolvedType.String(), ResolvedType.Object()))
-                }
-            },
-            {
-                "CommonUtil.Json.JsonParser.JsonParserException",
-                 new ResolvedType[] { CreateConstructorFuncWithArgs("CommonUtil.Json.JsonParserException", ResolvedType.String()) }
-            },
-            {
-                "CommonUtil.Http.HttpRequest",
-                new ResolvedType[]
+                string[] prefixes = new string[] { "", "System.Collections.Generic." };
+                frameworkConstructors = new Dictionary<string, ResolvedType[]>();
+                foreach (string line in Util.GetTextResource("TypeMetadata/FrameworkConstructors.txt").Split('\n'))
                 {
-                    CreateConstructorFuncWithArgs("CommonUtil.Http.HttpRequest", ResolvedType.String(), ResolvedType.String())
+                    string tLine = line.Trim();
+                    if (tLine.Length > 0)
+                    {
+                        if (!tLine.EndsWith(')')) throw new System.Exception(line);
+                        tLine = tLine.Substring(0, tLine.Length - 1);
+                        string[] parts = tLine.Split('(');
+                        if (parts.Length != 2) throw new System.Exception(line);
+                        parts[1] = parts[1].Trim();
+                        string className = parts[0];
+
+                        ResolvedType classType = ResolvedType.CreateFrameworkType(className);
+
+                        List<CSharpType> argTypes = new List<CSharpType>();
+                        TokenStream tokenStream = new TokenStream("metadata", parts[1], new Dictionary<string, bool>());
+                        while (tokenStream.HasMore)
+                        {
+                            if (argTypes.Count > 0) tokenStream.PopExpected(",");
+                            argTypes.Add(CSharpType.Parse(tokenStream));
+                        }
+                        ResolvedType[] argResolvedTypes = argTypes
+                            .Select(argType => ResolvedType.Create(argType, prefixes, null))
+                            .ToArray();
+
+                        ResolvedType ctorType = ResolvedType.CreateFunction(classType, argResolvedTypes);
+                        if (!frameworkConstructors.ContainsKey(className))
+                        {
+                            frameworkConstructors[className] = new ResolvedType[] { ctorType };
+                        }
+                        else
+                        {
+                            List<ResolvedType> ctorTypes = new List<ResolvedType>(frameworkConstructors[className]);
+                            ctorTypes.Add(ctorType);
+                            frameworkConstructors[className] = ctorTypes.ToArray();
+                        }
+                    }
                 }
-            },
-        };
+            }
+
+            ResolvedType[] output;
+            return frameworkConstructors.TryGetValue(typeName, out output) ? output : null;
+        }
     }
 }
