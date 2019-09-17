@@ -9,14 +9,7 @@ namespace CSharp2Crayon
     {
         private static readonly string[] BLACK_LISTED_CRAYON_FILES = new string[] {
             "Properties/AssemblyInfo.cs", // Not significant to output and is atypical format.
-
-            // The following have syntax stuff that I don't typically use and they'll just be
-            // implemented by Mutil anyway, so don't bother...
-            "Common/JsonParser.cs",
-            "Common/Multimap.cs",
-            "Common/Pair.cs",
-            "Common/SystemBitmap.cs",
-            "Common/Util.cs",
+            "CommonUtil/",
         };
 
         static void Main(string[] args)

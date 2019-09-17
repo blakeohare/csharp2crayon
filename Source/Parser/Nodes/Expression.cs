@@ -20,6 +20,11 @@
             return this.parent.DoTypeLookup(type, context);
         }
 
+        internal ResolvedType DoTypeLookupFailSilently(CSharpType type, ParserContext context)
+        {
+            return this.parent.DoTypeLookupFailSilently(type, context);
+        }
+
         public abstract Expression ResolveTypes(ParserContext context, VariableScope varScope);
     }
 }

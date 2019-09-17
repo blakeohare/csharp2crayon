@@ -26,7 +26,7 @@ namespace CSharp2Crayon
                     string canonicalPath = path.Replace('\\', '/');
                     foreach (string blackListItem in blackListedFiles)
                     {
-                        if (canonicalPath.EndsWith(blackListItem))
+                        if (canonicalPath.Contains(blackListItem))
                         {
                             return false;
                         }

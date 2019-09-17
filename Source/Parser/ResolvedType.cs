@@ -458,6 +458,14 @@ namespace CSharp2Crayon.Parser
                 }
             }
 
+            if (this.IsArray)
+            {
+                if (otherType.IsEnumerable(parserContext) || otherType.IsIList(parserContext))
+                {
+                    return true;
+                }
+            }
+
             string thisTypeString = this.CustomType == null ? this.FrameworkClass : this.CustomType.FullyQualifiedName;
             string otherTypeString = otherType.CustomType == null ? otherType.FrameworkClass : otherType.CustomType.FullyQualifiedName;
 
@@ -576,36 +584,58 @@ namespace CSharp2Crayon.Parser
 
         private static Dictionary<string, HashSet<string>> CLASS_ALL_DIRECT_PARENTS = new Dictionary<string, HashSet<string>>();
         private static Dictionary<string, HashSet<string>> CLASS_ALL_PARENTS = new Dictionary<string, HashSet<string>>();
+        private static readonly string[] NO_PARENT = new string[0];
 
         private static Dictionary<string, string[]> FRAMEWORK_CLASSES_AND_PARENTS = new Dictionary<string, string[]>() {
             // Note that there's also a constructor list at the bottom of FunctionInvocation.cs
             { "System.Collections.Generic.Dictionary", "System.Collections.Generic.IDictionary".Split(',') },
             { "System.Collections.Generic.HashSet", "System.Collections.Generic.ICollection".Split(',') },
             { "System.Collections.Generic.ICollection", "System.Collections.Generic.IEnumerable".Split(',') },
-            { "System.Collections.Generic.IComparer", new string[0] },
+            { "System.Collections.Generic.IComparer", NO_PARENT },
             { "System.Collections.Generic.IDictionary", "System.Collections.Generic.ICollection".Split(',') },
-            { "System.Collections.Generic.IEnumerable", new string[0] },
+            { "System.Collections.Generic.IEnumerable", NO_PARENT },
             { "System.Collections.Generic.IList", "System.Collections.Generic.ICollection".Split(',') },
             { "System.Collections.Generic.List", "System.Collections.Generic.IList".Split(',') },
             { "System.Collections.Generic.Queue", "System.Collections.Generic.IList".Split(',') },
             { "System.Collections.Generic.Stack", "System.Collections.Generic.IList".Split(',') },
-            { "System.Environment", new string[0] },
-            { "System.Exception", new string[0] },
-            { "System.Func", new string[0] },
-            { "System.IDisposable", new string[0] },
+
+            { "System.Exception", NO_PARENT },
+            { "System.Func", NO_PARENT },
+            { "System.IDisposable", NO_PARENT },
             { "System.InvalidOperationException", "System.Exception".Split(',') },
             { "System.NotImplementedException", "System.Exception".Split(',') },
-            { "System.Random", new string[0] },
-            { "System.Reflection.Assembly", new string[0] },
-            { "System.StringSplitOptions", new string[0] },
-            { "System.Text.StringBuilder", new string[0] },
-            { "System.Tuple", new string[0] },
+            { "System.Text.StringBuilder", NO_PARENT },
 
-            { "Common.FileUtil", new string[0] },
-            { "Common.JsonLookup", new string[0] },
-            { "Common.Multimap", "System.Collections.Generic.IDictionary".Split(',') },
-            { "Common.Pair", new string[0] },
-            { "Common.SystemBitmap", new string[0] },
+            // TODO: This needs to go away.
+            { "System.Reflection.Assembly", NO_PARENT },
+
+            { "CommonUtil.Base64", NO_PARENT },
+            { "CommonUtil.BoolUtil", NO_PARENT },
+            { "CommonUtil.FloatUtil", NO_PARENT },
+            { "CommonUtil.Print", NO_PARENT },
+            { "CommonUtil.StringUtil", NO_PARENT },
+            { "CommonUtil.Collections.DictionaryUtil", NO_PARENT },
+            { "CommonUtil.Collections.Multimap", "System.Collections.Generic.IDictionary".Split(',') },
+            { "CommonUtil.Collections.Pair", NO_PARENT },
+            { "CommonUtil.DateTime.Time", NO_PARENT },
+            { "CommonUtil.Disk.Directory", NO_PARENT },
+            { "CommonUtil.Disk.File", NO_PARENT },
+            { "CommonUtil.Disk.FileUtil", NO_PARENT },
+            { "CommonUtil.Disk.Path", NO_PARENT },
+            { "CommonUtil.Environment.EnvironmentVariables", NO_PARENT },
+            { "CommonUtil.Environment.Platform", NO_PARENT },
+            { "CommonUtil.Images.Bitmap", NO_PARENT },
+            { "CommonUtil.Images.IconGenerator", NO_PARENT },
+            { "CommonUtil.Http.HttpRequest", NO_PARENT },
+            { "CommonUtil.Http.HttpResponse", NO_PARENT },
+            { "CommonUtil.Json.JsonLookup", NO_PARENT },
+            { "CommonUtil.Json.JsonOption", NO_PARENT },
+            { "CommonUtil.Json.JsonParser", NO_PARENT },
+            { "CommonUtil.Processes.Process", NO_PARENT },
+            { "CommonUtil.Processes.ProcessUtil", NO_PARENT },
+            { "CommonUtil.Random.IdGenerator", NO_PARENT },
+            { "CommonUtil.Resources.ResourceStore", NO_PARENT },
+            { "CommonUtil.Text.UniversalTextDecoder", NO_PARENT },
         };
     }
 }

@@ -108,16 +108,33 @@ namespace CSharp2Crayon.Parser.Nodes
                         string lookup = rootResolvedType.FrameworkClass + "." + df.FieldName.Value;
                         switch (lookup)
                         {
+                            // (string) => bool
+                            case "CommonUtil.Disk.FileUtil.DirectoryExists":
+                            case "CommonUtil.Disk.FileUtil.FileExists":
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.Bool(),
+                                    ResolvedType.String())));
+                                break;
+
                             // (string) => string
-                            case "System.Environment.GetEnvironmentVariable":
-                            case "Common.FileUtil.GetParentDirectory":
+                            case "CommonUtil.Environment.EnvironmentVariables.Get":
+                            case "CommonUtil.Disk.FileUtil.GetParentDirectory":
+                            case "CommonUtil.Disk.Path.GetFileName":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
                                     ResolvedType.String(),
                                     ResolvedType.String())));
                                 break;
 
+                            // (string) => string[]
+                            case "CommonUtil.Disk.FileUtil.DirectoryListDirectoryPaths":
+                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                    ResolvedType.CreateArray(ResolvedType.String()),
+                                    ResolvedType.String())));
+                                break;
+
                             // (string, string) => string
-                            case "Common.FileUtil.GetAbsolutePathFromRelativeOrAbsolutePath":
+                            case "CommonUtil.StringUtil.SplitRemoveEmpty":
+                            case "CommonUtil.Disk.FileUtil.GetAbsolutePathFromRelativeOrAbsolutePath":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
                                     ResolvedType.String(),
                                     ResolvedType.String())));
@@ -127,7 +144,8 @@ namespace CSharp2Crayon.Parser.Nodes
                                 break;
 
                             // (params string[]) => string
-                            case "Common.FileUtil.JoinPath":
+                            case "CommonUtil.Disk.Path.Join":
+                            case "CommonUtil.Disk.FileUtil.JoinPath":
                                 List<ResolvedType> paramsStrings = new List<ResolvedType>();
                                 for (int i = 0; i < this.Args.Length; ++i)
                                 {
@@ -139,7 +157,7 @@ namespace CSharp2Crayon.Parser.Nodes
                                 break;
                                 
                             default:
-                                throw new System.NotImplementedException();
+                                throw new ParserException(this.FirstToken, "Not implemented");
                         }
                     }
                 }
@@ -324,7 +342,17 @@ namespace CSharp2Crayon.Parser.Nodes
                             ResolvedType itemType = rootResolvedType.GetEnumerableItemType();
                             switch (df.FieldName.Value)
                             {
-                                default: break;
+                                case "AddRange":
+                                    // This is actually just List only, not IList
+                                    if (rootResolvedType.FrameworkClass == "System.Collections.Generic.List")
+                                    {
+                                        possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
+                                            ResolvedType.Void(),
+                                            ResolvedType.CreateEnumerableType(itemType))));
+                                    }
+                                    break;
+                                default:
+                                    break;
                             }
                         }
 

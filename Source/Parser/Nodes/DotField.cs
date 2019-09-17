@@ -21,7 +21,7 @@ namespace CSharp2Crayon.Parser.Nodes
         internal static Expression AttemptToResolveDotFieldChainIntoDirectReference(IList<Token> chain, ParserContext context, Expression scope)
         {
             CSharpType cst = CSharpType.Fabricate(chain);
-            ResolvedType existingThing = scope.DoTypeLookup(cst, context);
+            ResolvedType existingThing = scope.DoTypeLookupFailSilently(cst, context);
             if (existingThing != null)
             {
                 if (existingThing.CustomType != null)
