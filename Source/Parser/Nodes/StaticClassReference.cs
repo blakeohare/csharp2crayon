@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CSharp2Crayon.Parser.Nodes
+﻿namespace CSharp2Crayon.Parser.Nodes
 {
     public class StaticClassReference : Expression
     {

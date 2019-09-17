@@ -155,7 +155,7 @@ namespace CSharp2Crayon.Parser.Nodes
                                     ResolvedType.String(),
                                     paramsStrings.ToArray())));
                                 break;
-                                
+
                             default:
                                 throw new ParserException(this.FirstToken, "Not implemented");
                         }
