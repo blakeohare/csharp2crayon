@@ -325,7 +325,7 @@ namespace CSharp2Crayon.Parser
 
         public static ResolvedType GetEnumFieldTypeOfFrameworkEnum(string name)
         {
-            if (!FRAMEWORK_ENUMS.ContainsKey(name)) return null;
+            if (GetFrameworkEnum(name) == null) return null;
             return new ResolvedType()
             {
                 IsEnumField = true,
@@ -396,9 +396,9 @@ namespace CSharp2Crayon.Parser
             }
             if (this.FrameworkClass != null)
             {
-                string[] fieldNames;
-
-                if (!FRAMEWORK_ENUMS.TryGetValue(this.ToString(), out fieldNames)) throw new System.InvalidOperationException("An invalid framework enum was created somehow.");
+                string enumName = this.ToString();
+                string[] fieldNames = GetFrameworkEnum(enumName);
+                if (fieldNames == null) throw new System.InvalidOperationException("An invalid framework enum was created somehow.");
                 return fieldNames.Contains(name);
             }
             throw new System.InvalidOperationException(); // should not have gotten in this state.
@@ -496,7 +496,7 @@ namespace CSharp2Crayon.Parser
                     };
                 }
 
-                if (FRAMEWORK_ENUMS.ContainsKey(fullyQualifiedName))
+                if (GetFrameworkEnum(fullyQualifiedName) != null)
                 {
                     return new ResolvedType()
                     {
@@ -698,22 +698,33 @@ namespace CSharp2Crayon.Parser
             "void",
         };
 
-        private static Dictionary<string, string[]> FRAMEWORK_ENUMS = new Dictionary<string, string[]>() {
+        private static Dictionary<string, string[]> frameworkEnums = null;
+
+        private static string[] GetFrameworkEnum(string fullyQualifiedName)
+        {
+            if (frameworkEnums == null)
             {
-                "CommonUtil.Json.JsonOption",
-                new string[] {
-                    "FAIL_SILENTLY",
-                    "ALLOW_COMMENTS",
-                    "ALLOW_TRAILING_COMMA",
-                    "ALLOW_SINGLE_QUOTES",
-                    "ALLOW_NON_QUOTED_KEYS",
-                    "ALLOW_NON_OBJECT_AS_ROOT",
-                    "ALLOW_DECIMAL_AS_FLOAT_FIRST_CHAR",
-                    "OVERWRITE_DUPLICATE_KEYS",
-                    "ALLOW_PYTHON_PRIMITIVES",
+                frameworkEnums = new Dictionary<string, string[]>();
+                TokenStream tokens = new TokenStream("enum data", Util.GetTextResource("TypeMetadata/FrameworkEnums.txt"), new Dictionary<string, bool>());
+                while (tokens.HasMore)
+                {
+                    tokens.PopExpected("enum");
+                    CSharpType name = CSharpType.Parse(tokens);
+                    tokens.PopExpected("{");
+                    List<string> fields = new List<string>();
+                    bool nextAllowed = true;
+                    while (!tokens.PopIfPresent("}"))
+                    {
+                        if (!nextAllowed) tokens.PopExpected("}");
+                        fields.Add(tokens.PopWord().Value);
+                        nextAllowed = tokens.PopIfPresent(",");
+                    }
+                    frameworkEnums[name.RootTypeString] = fields.ToArray();
                 }
-            },
-        };
+            }
+            string[] output;
+            return frameworkEnums.TryGetValue(fullyQualifiedName, out output) ? output : null;
+        }
 
         private static Dictionary<string, HashSet<string>> CLASS_ALL_DIRECT_PARENTS = new Dictionary<string, HashSet<string>>();
         private static Dictionary<string, HashSet<string>> CLASS_ALL_PARENTS = new Dictionary<string, HashSet<string>>();

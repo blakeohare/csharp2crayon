@@ -1,4 +1,4 @@
-﻿enum JsonParser.Json.JsonOptions {
+﻿enum CommonUtil.Json.JsonOption {
 	FAIL_SILENTLY,
 	ALLOW_COMMENTS,
 	ALLOW_TRAILING_COMMA,
