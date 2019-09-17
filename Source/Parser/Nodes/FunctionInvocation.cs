@@ -144,6 +144,7 @@ namespace CSharp2Crayon.Parser.Nodes
 
                             // (string) => string[]
                             case "CommonUtil.Disk.FileUtil.DirectoryListDirectoryPaths":
+                            case "CommonUtil.Disk.FileUtil.GetAllFilePathsRelativeToRoot":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
                                     ResolvedType.CreateArray(ResolvedType.String()),
                                     ResolvedType.String())));
@@ -496,30 +497,29 @@ namespace CSharp2Crayon.Parser.Nodes
                         {
                             string rootType = df.Root.ResolvedType.ToString();
                             // something else that isn't linq, a list, or dictionary
-                            throw new System.NotImplementedException("Method name: " + df.FieldName.Value);
+                            throw new System.NotImplementedException("Method name: " + rootResolvedType.ToString() + "." + df.FieldName.Value);
                         }
                     }
                     else if (rootResolvedType.PrimitiveType != null)
                     {
                         switch (rootResolvedType.PrimitiveType + "." + df.FieldName)
                         {
-
                             case "string.Join":
                                 throw new System.NotImplementedException();
 
+                            // (void) => string
                             case "object.ToString":
                             case "string.ToLowerInvariant":
                             case "string.ToUpperInvariant":
+                            case "string.Trim":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String())));
                                 break;
 
+                            // (char) => string
                             case "string.Split":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
-                                    ResolvedType.String(),
-                                    new ResolvedType[] { ResolvedType.String(), ResolvedType.CreateArray(ResolvedType.String()) })));
-                                possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(
-                                    ResolvedType.String(),
-                                    new ResolvedType[] { ResolvedType.Char(), ResolvedType.CreateArray(ResolvedType.String()) })));
+                                    ResolvedType.CreateArray(ResolvedType.String()),
+                                    ResolvedType.Char())));
                                 break;
 
                             default:
@@ -609,6 +609,15 @@ namespace CSharp2Crayon.Parser.Nodes
                                 {
                                     throw new System.NotImplementedException();
                                 }
+                                break;
+
+                            case "CommonUtil.Collections.Pair":
+                                possibleRoots.Add(new ConstructorInvocationFragmentWrapper(cif)
+                                {
+                                    ResolvedType = ResolvedType.CreateFunction(
+                                        ResolvedType.CreatePair(generics[0], generics[1]),
+                                        generics),
+                                });
                                 break;
 
                             default:
@@ -789,6 +798,13 @@ namespace CSharp2Crayon.Parser.Nodes
             {
                 "CommonUtil.Json.JsonParser.JsonParserException",
                  new ResolvedType[] { CreateConstructorFuncWithArgs("CommonUtil.Json.JsonParserException", ResolvedType.String()) }
+            },
+            {
+                "CommonUtil.Http.HttpRequest",
+                new ResolvedType[]
+                {
+                    CreateConstructorFuncWithArgs("CommonUtil.Http.HttpRequest", ResolvedType.String(), ResolvedType.String())
+                }
             },
         };
     }

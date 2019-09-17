@@ -305,6 +305,15 @@ namespace CSharp2Crayon.Parser
             };
         }
 
+        public static ResolvedType CreatePair(ResolvedType firstType, ResolvedType secondType)
+        {
+            return new ResolvedType()
+            {
+                FrameworkClass = "CommonUtil.Collections.Pair",
+                Generics = new ResolvedType[] { firstType, secondType },
+            };
+        }
+
         public static ResolvedType CreateArray(ResolvedType itemType)
         {
             return new ResolvedType()
@@ -634,9 +643,21 @@ namespace CSharp2Crayon.Parser
             if (otherType.IsVoid || this.IsVoid) return false;
 
             if ((this.IsNullable && otherType.IsNullable) ||
-                (this.IsArray && otherType.IsArray))
+                (this.IsArray && otherType.IsArray) ||
+                (this.IsEnumField && otherType.IsEnumField))
             {
                 return this.Generics[0].IsSameAs(otherType.Generics[0]);
+            }
+
+            if (this.IsEnum && otherType.IsEnum)
+            {
+                return this.FrameworkClass == otherType.FrameworkClass &&
+                    this.CustomType == otherType.CustomType;
+            }
+
+            if (this.IsEnumField && otherType.IsEnum)
+            {
+                return this.Generics[0].IsSameAs(otherType);
             }
 
             if (this.FrameworkClass == otherType.FrameworkClass &&

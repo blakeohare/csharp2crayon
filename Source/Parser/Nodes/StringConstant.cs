@@ -7,6 +7,10 @@
         public StringConstant(Token firstToken, string actualValue, TopLevelEntity parent)
             : base(firstToken, parent)
         {
+            if (firstToken.Value[0] == '\'')
+            {
+                throw new System.Exception();
+            }
             this.Value = Value;
         }
 

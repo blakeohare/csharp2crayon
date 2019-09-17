@@ -278,6 +278,8 @@ namespace CSharp2Crayon.Parser.Nodes
 
                 case "CommonUtil.DateTime.Time:UnixTimeNow":
                 case "System.Collections.Generic.HashSet:Count":
+                case "System.Collections.Generic.Dictionary:Count":
+                case "System.Collections.Generic.IDictionary:Count":
                     this.ResolvedType = ResolvedType.Int();
                     return;
 

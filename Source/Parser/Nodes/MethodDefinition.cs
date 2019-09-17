@@ -40,7 +40,10 @@ namespace CSharp2Crayon.Parser.Nodes
         public override void ResolveTypesForSignatures(ParserContext context)
         {
             this.ResolvedReturnType = this.DoTypeLookup(this.ReturnType, context);
-            this.ResolvedArgTypes = this.ArgTypes.Select(t => this.DoTypeLookup(t, context)).ToArray();
+            this.ResolvedArgTypes = this.ArgTypes
+                .Select(t => this.DoTypeLookup(t, context))
+                .Select(t => t.IsEnum ? ResolvedType.CreateEnumField(t) : t)
+                .ToArray();
         }
 
         public override void ResolveTypesInCode(ParserContext context)

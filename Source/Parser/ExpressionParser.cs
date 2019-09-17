@@ -552,7 +552,15 @@ namespace CSharp2Crayon.Parser
 
             if (c == '"' || c == '\'')
             {
-                return new StringConstant(token, StringUtil.ConvertStringTokenToValue(token), parent);
+                string stringValue = StringUtil.ConvertStringTokenToValue(token);
+                if (c == '"')
+                {
+                    return new StringConstant(token, stringValue, parent);
+                }
+                else
+                {
+                    return new CharConstant(token, stringValue, parent);
+                }
             }
 
             if (c == '0' && next.Length > 2 && next[1] == 'x')
