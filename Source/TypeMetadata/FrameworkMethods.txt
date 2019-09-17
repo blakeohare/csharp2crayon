@@ -1,0 +1,59 @@
+﻿// It's okay to put comments in this file. This is consumed by the tokenizer
+
+class System.Text.StringBuilder {
+	void Append(object);
+}
+
+class System.Collections.Generic.Stack<T1> {
+	void Push(T1);
+	T1 Pop();
+}
+
+class System.Collections.Generic.HashSet<T1> {
+	void Remove(T1);
+}
+
+interface System.Collections.Generic.ICollection<T1> {
+	void Add(T1);
+	void Clear();
+	bool Contains(T1);
+}
+
+interface System.Collections.Generic.IDictionary<T1, T2> {
+	void Add(T1, T2);
+	void Clear();
+	bool ContainsKey(T1);
+	bool ContainsValue(T2);
+	bool TryGetValue(T1, T2); // TODO: this needs to support out
+}
+
+interface System.Collections.Generic.IList<T1> {
+	void AddRange(System.Collections.Generic.IEnumerable<T1>);
+}
+
+class object {
+	string ToString();
+	bool Equals(object);
+	int GetHashCode();
+	System.Type GetType();
+}
+
+class string {
+	static string Join(string, string[]);
+	string ToLowerInvariant();
+	string ToUpperInvariant();
+	string Trim();
+	string[] Split(char);
+}
+
+class CommonUtil.Json.JsonLookup {
+	string GetAsString(string);
+	string GetAsString(string, string);
+	System.Collections.Generic.IDictionary<string, object> GetAsDictionary(string);
+	object[] GetAsList(string);
+}
+
+class CommonUtil.Json.JsonParser {
+	CommonUtil.Json.JsonParser AddOption(CommonUtil.Json.JsonOption);
+	System.Collections.Generic.IDictionary<string, object> ParseAsDictionary();
+}
