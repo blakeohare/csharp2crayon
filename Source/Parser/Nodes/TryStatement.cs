@@ -47,15 +47,18 @@ namespace CSharp2Crayon.Parser.Nodes
                 ResolvedType exceptionType = this.Parent.DoTypeLookupFailSilently(cb.ExceptionType, context);
                 if (exceptionType == null) throw new ParserException(cb.ExceptionType.FirstToken, "Exception type not found.");
                 if (!exceptionType.IsException(context)) throw new ParserException(cb.ExceptionType.FirstToken, "This type does not extend from System.Exception");
-                VariableScope vs = new VariableScope(varScope);
+                VariableScope catchVarScope = new VariableScope(varScope);
                 if (cb.ExceptionVariable != null)
                 {
-                    vs.DeclareVariable(cb.ExceptionVariable.Value, exceptionType);
+                    catchVarScope.DeclareVariable(cb.ExceptionVariable.Value, exceptionType);
                 }
-                cb.Code = Executable.ResolveTypesForCode(cb.Code, context, varScope);
+                cb.Code = Executable.ResolveTypesForCode(cb.Code, context, catchVarScope);
             }
 
-            this.FinallyCode = Executable.ResolveTypesForCode(this.FinallyCode, context, new VariableScope(varScope));
+            if (this.FinallyCode != null)
+            {
+                this.FinallyCode = Executable.ResolveTypesForCode(this.FinallyCode, context, new VariableScope(varScope));
+            }
             return Listify(this);
         }
     }

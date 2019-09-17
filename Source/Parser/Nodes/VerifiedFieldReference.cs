@@ -252,16 +252,19 @@ namespace CSharp2Crayon.Parser.Nodes
             switch (className + ":" + methodName)
             {
                 case "System.Collections.Generic.HashSet:Contains":
+                case "System.Collections.Generic.ISet:Contains":
                     ResolvedType itemType = resolvedType.Generics[0];
                     this.ResolvedType = ResolvedType.CreateFunction(ResolvedType.Bool(), new ResolvedType[] { itemType });
                     return;
 
                 case "System.Collections.Generic.Dictionary:Keys":
+                case "System.Collections.Generic.IDictionary:Keys":
                     ResolvedType keyType = resolvedType.Generics[0];
                     this.ResolvedType = ResolvedType.CreateEnumerableType(keyType);
                     return;
 
                 case "System.Collections.Generic.Dictionary:Values":
+                case "System.Collections.Generic.IDictionary:Values":
                     ResolvedType valueType = resolvedType.Generics[1];
                     this.ResolvedType = ResolvedType.CreateEnumerableType(valueType);
                     return;

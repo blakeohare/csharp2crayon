@@ -292,7 +292,7 @@ namespace CSharp2Crayon.Parser
         {
             return new ResolvedType()
             {
-                FrameworkClass = "System.Collectios.Generic.IDictionary",
+                FrameworkClass = "System.Collections.Generic.IDictionary",
                 Generics = new ResolvedType[] { keyType, valueType }
             };
         }

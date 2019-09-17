@@ -101,7 +101,23 @@ namespace CSharp2Crayon.Parser.Nodes
                 {
                     if (df.Root is StaticClassReference)
                     {
-                        throw new System.NotImplementedException();
+                        ClassLikeDefinition cd = ((StaticClassReference)df.Root).ClassDef;
+                        foreach (TopLevelEntity tle in cd.GetMemberNonNull(df.FieldName.Value))
+                        {
+                            if (tle.IsStatic)
+                            {
+                                if (tle is MethodDefinition)
+                                {
+                                    MethodDefinition md = (MethodDefinition)tle;
+                                    ResolvedType funcSig = ResolvedType.CreateFunction(md.ResolvedReturnType, md.ResolvedArgTypes);
+                                    possibleRoots.Add(ConvertDfToVfr(df, funcSig));
+                                }
+                                else
+                                {
+                                    throw new ParserException(this.OpenParen, "Cannot invoke this field/property like a function");
+                                }
+                            }
+                        }
                     }
                     else
                     {
@@ -214,6 +230,7 @@ namespace CSharp2Crayon.Parser.Nodes
                             if (this.FileContext.HasLinq)
                             {
                                 CSharpType[] inlineTypes = df.InlineTypeSpecification;
+                                ResolvedType[] inlineResolvedTypes = inlineTypes == null ? null : inlineTypes.Select(t => this.DoTypeLookup(t, context)).ToArray();
                                 switch (df.FieldName.Value)
                                 {
                                     case "Concat":
@@ -277,8 +294,12 @@ namespace CSharp2Crayon.Parser.Nodes
                                         possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(itemType)));
                                         break;
 
-                                    case "OfType": throw new System.NotImplementedException();
-                                    case "Cast": throw new System.NotImplementedException();
+                                    case "OfType":
+                                    case "Cast":
+                                        possibleRoots.Add(ConvertDfToLinqVfr(df, ResolvedType.CreateFunction(
+                                            ResolvedType.CreateEnumerableType(inlineResolvedTypes[0]))));
+                                        break;
+
                                     default: break;
                                 }
                             }
@@ -327,6 +348,35 @@ namespace CSharp2Crayon.Parser.Nodes
                                             break;
 
                                         default: break;
+                                    }
+                                }
+                                break;
+
+                            case "CommonUtil.Json.JsonLookup":
+                                {
+                                    switch (df.FieldName.Value)
+                                    {
+                                        case "GetAsString":
+                                            possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String(), new ResolvedType[] { ResolvedType.String(), ResolvedType.String() })));
+                                            possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String(), ResolvedType.String())));
+                                            break;
+
+                                        case "GetAsDictionary":
+                                            possibleRoots.Add(ConvertDfToVfr(df,
+                                                ResolvedType.CreateFunction(
+                                                    ResolvedType.CreateIDictionary(ResolvedType.String(), ResolvedType.Object()),
+                                                    ResolvedType.String())));
+                                            break;
+
+                                        case "GetAsList":
+                                            possibleRoots.Add(ConvertDfToVfr(df,
+                                                ResolvedType.CreateFunction(
+                                                    ResolvedType.CreateArray(ResolvedType.Object()),
+                                                    ResolvedType.String())));
+                                            break;
+
+                                        default:
+                                            throw new System.NotImplementedException();
                                     }
                                 }
                                 break;
@@ -453,9 +503,11 @@ namespace CSharp2Crayon.Parser.Nodes
                     {
                         switch (rootResolvedType.PrimitiveType + "." + df.FieldName)
                         {
+
                             case "string.Join":
                                 throw new System.NotImplementedException();
 
+                            case "object.ToString":
                             case "string.ToLowerInvariant":
                             case "string.ToUpperInvariant":
                                 possibleRoots.Add(ConvertDfToVfr(df, ResolvedType.CreateFunction(ResolvedType.String())));
@@ -706,8 +758,9 @@ namespace CSharp2Crayon.Parser.Nodes
         private static ResolvedType[] CreateStandardExceptionConstructor(string name)
         {
             return new ResolvedType[] {
-                CreateConstructorFuncWithArgs(name),
-                CreateConstructorFuncWithArgs(name, ResolvedType.String())
+                CreateConstructorFuncWithArgs(name), // no args
+                CreateConstructorFuncWithArgs(name, ResolvedType.String()), // message
+                CreateConstructorFuncWithArgs(name, ResolvedType.String(), ResolvedType.CreateFrameworkType("System.Exception")), // message w/ inner exception
             };
         }
 
